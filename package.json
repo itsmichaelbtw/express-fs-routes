@@ -1,0 +1,55 @@
+{
+    "name": "express-generative-routes",
+    "version": "1.0.0",
+    "description": "Create and define dynamic Express routes using the file system",
+    "keywords": [
+        "nodejs",
+        "expressjs",
+        "typescript"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/itsmichaelbtw/express-generative-routes.git"
+    },
+    "bugs": {
+        "url": "https://github.com/itsmichaelbtw/express-generative-routes/issues"
+    },
+    "homepage": "https://github.com/itsmichaelbtw/express-generative-routes#readme",
+    "main": "index.ts",
+    "scripts": {
+        "release:patch": "standard-version --release-as patch",
+        "release:minor": "standard-version --release-as minor",
+        "release:major": "standard-version --release-as major",
+        "release:dry": "standard-version --dry-run",
+        "publish:tag": "git push --follow-tags origin main",
+        "prepare": "husky install"
+    },
+    "standard-version": {
+        "scripts": {
+            "posttag": "npm run publish:tag"
+        }
+    },
+    "lint-staged": {
+        "*.ts": [
+            "prettier --write"
+        ]
+    },
+    "dependencies": {
+        "express": "^4.18.1",
+        "path-to-regexp": "^6.2.1"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^17.1.2",
+        "@commitlint/config-conventional": "^17.1.0",
+        "@types/express": "^4.17.13",
+        "@types/node": "^18.7.15",
+        "husky": "^8.0.1",
+        "lint-staged": "^13.0.3",
+        "prettier": "^2.7.1",
+        "standard-version": "^9.5.0",
+        "typescript": "^4.8.2"
+    },
+    "author": "itsmichaelbtw",
+    "license": "MIT"
+}
+
