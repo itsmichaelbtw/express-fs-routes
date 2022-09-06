@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "lib": ["esnext"],
+        "module": "esnext",
+        "target": "es2021",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        "allowUnreachableCode": true,
+        "allowUnusedLabels": true,
+        "allowJs": true,
+        "rootDir": "lib",
+        "outDir": "build",
+    }, 
+    "typeAcquisition": {
+        "enable": true
+    },
+    "include": ["./lib"]
+}
