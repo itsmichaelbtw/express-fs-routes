@@ -1,55 +1,85 @@
 {
-    "name": "express-generative-routes",
-    "version": "1.0.0",
-    "description": "Create and define dynamic Express routes using the file system",
-    "keywords": [
-        "nodejs",
-        "expressjs",
-        "typescript"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/itsmichaelbtw/express-generative-routes.git"
-    },
-    "bugs": {
-        "url": "https://github.com/itsmichaelbtw/express-generative-routes/issues"
-    },
-    "homepage": "https://github.com/itsmichaelbtw/express-generative-routes#readme",
-    "main": "index.ts",
+  "name": "express-fs-routes",
+  "version": "1.0.0",
+  "description": "Create and define dynamic Express routes using the file system.",
+  "main": "",
+  "module": "",
+  "types": "",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "start": "nodemon ./examples/server.ts --config nodemon.json",
+    "test": "",
+    "build": "",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write .",
+    "release:patch": "standard-version --release-as patch",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:prerelease": "standard-version --prerelease",
+    "release": "standard-version",
+    "push:tags": "git push --follow-tags origin main",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsmichaelbtw/express-fs-routes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/itsmichaelbtw/express-fs-routes/issues"
+  },
+  "homepage": "https://github.com/itsmichaelbtw/express-fs-routes#readme",
+  "keywords": [
+    "nodejs",
+    "expressjs",
+    "typescript",
+    "routing",
+    "api"
+  ],
+  "dependencies": {
+    "path-to-regexp": "^6.2.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.1.2",
+    "@commitlint/config-conventional": "^17.1.0",
+    "@types/chai": "^4.3.4",
+    "@types/express": "^4.17.13",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.11.9",
+    "env-agent": "^1.2.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "nodemon": "^2.0.20",
+    "prettier": "^2.7.1",
+    "rimraf": "^3.0.2",
+    "standard-version": "^9.5.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^4.8.4"
+  },
+  "peerDependencies": {
+    "express": "^4.18.2"
+  },
+  "standard-version": {
     "scripts": {
-        "release:patch": "standard-version --release-as patch",
-        "release:minor": "standard-version --release-as minor",
-        "release:major": "standard-version --release-as major",
-        "release:dry": "standard-version --dry-run",
-        "publish:tag": "git push --follow-tags origin main",
-        "prepare": "husky install"
-    },
-    "standard-version": {
-        "scripts": {
-            "posttag": "npm run publish:tag"
-        }
-    },
-    "lint-staged": {
-        "*.ts": [
-            "prettier --write"
-        ]
-    },
-    "dependencies": {
-        "express": "^4.18.1",
-        "path-to-regexp": "^6.2.1"
-    },
-    "devDependencies": {
-        "@commitlint/cli": "^17.1.2",
-        "@commitlint/config-conventional": "^17.1.0",
-        "@types/express": "^4.17.13",
-        "@types/node": "^18.7.15",
-        "husky": "^8.0.1",
-        "lint-staged": "^13.0.3",
-        "prettier": "^2.7.1",
-        "standard-version": "^9.5.0",
-        "typescript": "^4.8.2"
-    },
-    "author": "itsmichaelbtw",
-    "license": "MIT"
+      "prebump": "npm run build",
+      "posttag": "npm run push:tags"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write"
+    ]
+  },
+  "author": "Orison Networks",
+  "contributors": [
+    "Michael Cizek <itsmichaelbtw@gmail.com>"
+  ],
+  "license": "MIT"
 }
-
