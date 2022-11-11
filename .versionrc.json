@@ -1,6 +1,6 @@
 {
     "types": [
-        { "type": "feat", "section": "The New Stuff" },
+        { "type": "feat", "section": "What's New" },
         { "type": "fix", "section": "Fixed" },
         { "type": "chore", "hidden": true },
         { "type": "docs", "hidden": true },
