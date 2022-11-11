@@ -1,0 +1,9 @@
+{
+    "watch": [
+        "lib",
+        "examples"
+    ],
+    "env": {
+        "NODE_ENV": "development"
+    }
+}
