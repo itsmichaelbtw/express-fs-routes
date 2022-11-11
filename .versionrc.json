@@ -1,0 +1,12 @@
+{
+    "types": [
+        { "type": "feat", "section": "The New Stuff" },
+        { "type": "fix", "section": "Fixed" },
+        { "type": "chore", "hidden": true },
+        { "type": "docs", "hidden": true },
+        { "type": "style", "hidden": true },
+        { "type": "refactor", "hidden": true },
+        { "type": "perf", "hidden": true },
+        { "type": "test", "hidden": true }
+    ]
+}
