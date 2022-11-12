@@ -84,13 +84,6 @@ interface RouteRegistrationOptions {
      */
     indexNames?: string[];
     /**
-     * All route urls will be registered as a string. Specify if you wish all urls to
-     * be converted to a RegExp before being registered.
-     *
-     * Defaults to `false`.
-     */
-    regexURLs?: boolean;
-    /**
      * Whether errors should be thrown. If this is set to `false`, operations will
      * continue as normal.
      *
@@ -103,7 +96,6 @@ const DEFAULT_OPTIONS: RouteRegistrationOptions = {
     directory: "routes",
     appMount: "",
     indexNames: ["index.js"],
-    regexURLs: false,
     silent: false
 };
 
@@ -269,10 +261,6 @@ export function registerRoutes(
 
             if (url.endsWith("/")) {
                 url = url.replace(/\/$/, "");
-            }
-
-            if (options.regexURLs) {
-                url = convertPathRegex(url).toString();
             }
 
             return ensureLeadingToken(url, "/");
