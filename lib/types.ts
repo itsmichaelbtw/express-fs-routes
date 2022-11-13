@@ -1,13 +1,35 @@
 import type { IRouter } from "express";
 
-type Methods = "get" | "post" | "put" | "delete" | "patch" | "options" | "head";
+type Methods =
+    | "checkout"
+    | "copy"
+    | "delete"
+    | "get"
+    | "head"
+    | "lock"
+    | "merge"
+    | "mkactivity"
+    | "mkcol"
+    | "move"
+    | "m-search"
+    | "notify"
+    | "options"
+    | "patch"
+    | "post"
+    | "purge"
+    | "put"
+    | "report"
+    | "search"
+    | "subscribe"
+    | "trace"
+    | "unlock"
+    | "unsubscribe";
 
 export type FilePath = string;
 
 export type TreeComponentType = "file" | "directory";
 export type DirectoryCallback = Function;
 export type DirectoryEnsemble = DirTree;
-export type RouteEnvironmentMode = "development" | "production";
 
 /**
  * The directory tree is a recursive data structure that represents the directory
@@ -45,9 +67,9 @@ export interface RouteSchema {
      */
     method: Methods;
     /**
-     * The relative path of the file location.
+     * The absolute path of the file location.
      */
-    relativePath: FilePath;
+    absolutePath: FilePath;
     /**
      * The url path of the route. This is the path that will be
      * registered to the express app.
@@ -60,14 +82,17 @@ export interface RouteSchema {
      */
     routeOptions: RouteHandlerOptions;
     /**
-     * The environment this route is registered in.
-     * This will be either `development` or `production`.
-     */
-    environment: RouteEnvironmentMode;
-    /**
      * The status of the route.
      */
-    status: "registered";
+    status: "registered" | "skipped" | "error";
+    /**
+     * Error message if the route was skipped.
+     */
+    error?: string;
+    /**
+     * A message that describes the status of the route.
+     */
+    message?: string;
 }
 
 /**
@@ -104,13 +129,13 @@ export interface RouteHandlerOptions {
      */
     paramsToken?: string | RegExp;
     /**
-     * Whether the route should only be registered in a `development`
-     * environment. This coincides with the `developmentRoutes` option
-     * in `registerRoutes`.
+     * Specify certain environments you want this route to be registered in. If
+     * you wish to register a route in all environments, you can omit this property, or
+     * set it to `*`.
      *
-     * This is useful to define certain routes instead of a specific directory.
+     * Defaults to `*`.
      */
-    developmentOnly?: boolean;
+    environments?: string | string[];
     /**
      * Whether this route should be treated as an index route. This route
      * will be instead mounted at the parent directory.
