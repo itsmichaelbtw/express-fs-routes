@@ -96,6 +96,21 @@ interface RouteRegistrationOptions {
      */
     indexNames?: string[];
     /**
+     * Express parameters are supported by default. This allows you to specify
+     * a folder or file that will be used as a paramater.
+     *
+     * For example, if you have a route at `routes/users/:id/retrieve`,
+     * you can specify `id` as a parameter.
+     *
+     * Filepath: `routes/users/#id/retrieve.js`
+     *
+     * You may optionally specify a custom params token that will be used to
+     * test for parameters.
+     *
+     * Defaults to `#`.
+     */
+    paramsToken?: string | RegExp;
+    /**
      * Specify a directory to save a JSON file that contains a tree of all
      * registered routes, and a registry of all route handlers. This is useful
      * for debugging purposes.
@@ -118,6 +133,7 @@ const DEFAULT_OPTIONS: RouteRegistrationOptions = {
     directory: "routes",
     appMount: "",
     indexNames: ["index.js"],
+    paramsToken: "#",
     output: ".fs-routes",
     silent: false
 };
@@ -350,7 +366,7 @@ export function registerRoutes(app: ExpressApp, options: RouteRegistrationOption
                 handler.stack[0].route.path = "/";
             }
 
-            const paramsTokenReplacer = formulateTokenRegex(routeOptions.paramsToken);
+            const paramsTokenReplacer = formulateTokenRegex(options.paramsToken);
             url = url.replace(paramsTokenReplacer, EXPRESS_PARAMS_TOKEN);
 
             return ensureLeadingToken(url, "/");
