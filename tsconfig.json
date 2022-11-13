@@ -1,13 +1,13 @@
 {
     "compilerOptions": {
         "lib": ["ES2015"],
-        "target": "ES2015",
+        "target": "ES6",
+        "module": "commonjs",
         "moduleResolution": "Node",
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "allowJs": true,
         "declaration": true,
-        "emitDeclarationOnly": true,
         "declarationDir": "dist",
         "outDir": "dist"
     },
