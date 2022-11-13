@@ -1,4 +1,4 @@
-import type { IRouter } from "express";
+import type { IRouter, Request, Response } from "express";
 
 type Methods =
     | "checkout"
@@ -24,6 +24,8 @@ type Methods =
     | "trace"
     | "unlock"
     | "unsubscribe";
+
+type NotImplementedCallback = (req: Request, res: Response) => void;
 
 export type FilePath = string;
 
@@ -114,24 +116,11 @@ export interface RouteHandler extends IRouter {
  */
 export interface RouteHandlerOptions {
     /**
-     * Express parameters are supported by default. This allows you to specify
-     * a folder or file that will be used as a paramater.
-     *
-     * For example, if you have a route at `routes/users/:id/retrieve`,
-     * you can specify `id` as a parameter.
-     *
-     * Filepath: `routes/users/#id/retrieve.js`
-     *
-     * You may optionally specify a custom params token that will be used to
-     * test for parameters.
-     *
-     * Defaults to `#`.
-     */
-    paramsToken?: string | RegExp;
-    /**
      * Specify certain environments you want this route to be registered in. If
      * you wish to register a route in all environments, you can omit this property, or
      * set it to `*`.
+     *
+     * This value takes precedence over `environmentRoutes`.
      *
      * Defaults to `*`.
      */
@@ -139,6 +128,24 @@ export interface RouteHandlerOptions {
     /**
      * Whether this route should be treated as an index route. This route
      * will be instead mounted at the parent directory.
+     *
+     * This value takes precedence over `indexNames`.
      */
     isIndex?: boolean;
+    /**
+     * Sometimes you may require the route to still be publicly accessible, but
+     * don't want to perform it's default behaviour. You can provide custom logic to handle
+     * the request instead.
+     *
+     * Example: You may want to temporarily disable a login/register route, but still want to
+     * return a 200 response. The choice is yours.
+     */
+    notImplemented?: NotImplementedCallback;
+    /**
+     * Control whether the route should be registered. The route will still be scanned and under go
+     * all the same checks, but will bypass express registration.
+     *
+     * Defaults to `true`.
+     */
+    skip?: boolean;
 }
