@@ -38,6 +38,10 @@ An intuitive way of defining and registering your routes for your express app. A
 $ npm install express-fs-routes
 ```
 
+```bash
+$ yarn add express-fs-routes
+```
+
 > Ensure you have express installed in your project.
 
 It is recommended to view the [examples](#examples) before continuing.
