@@ -121,6 +121,10 @@ interface RouteRegistrationOptions {
      */
     output?: string | false | null;
     /**
+     * Choose if you wish to redact the file output paths for security reasons.
+     */
+    redactOutputFilePaths?: boolean;
+    /**
      * Whether errors should be thrown. If this is set to `false`, operations will
      * continue as normal.
      *
@@ -336,8 +340,10 @@ export function registerRoutes(app: ExpressApp, options: RouteRegistrationOption
 
         const handlerStack = handler.stack[0];
         const routeOptions = handler.routeOptions;
+
+        // i think it would be neccessary to create a route schema for each
+        // stack that is attached to the handler
         const method = handlerStack.route.stack[0].method.toUpperCase();
-        const extendedUrl = handlerStack.route.path;
 
         const routeUrl = createRouteUrl(fileEntry.path, (url) => {
             if (routeOptions.isIndex) {
@@ -360,11 +366,11 @@ export function registerRoutes(app: ExpressApp, options: RouteRegistrationOption
 
             // express doubles up on the path
 
-            if (extendedUrl && extendedUrl !== "/") {
-                url = url + extendedUrl;
-                handler.stack[0].regexp = EXPRESS_BASE_REGEX;
-                handler.stack[0].route.path = "/";
-            }
+            // if (extendedUrl && extendedUrl !== "/") {
+            //     url = url + extendedUrl;
+            //     handler.stack[0].regexp = EXPRESS_BASE_REGEX;
+            //     handler.stack[0].route.path = "/";
+            // }
 
             const paramsTokenReplacer = formulateTokenRegex(options.paramsToken);
             url = url.replace(paramsTokenReplacer, EXPRESS_PARAMS_TOKEN);
@@ -404,11 +410,11 @@ export function registerRoutes(app: ExpressApp, options: RouteRegistrationOption
                 return schema;
             });
 
-            if (routeHandler) {
-                addRoute(routeSchema, routeHandler);
-            } else {
-                appendToRegistry(routeSchema);
-            }
+            // if (routeHandler) {
+            //     addRoute(routeSchema, routeHandler);
+            // } else {
+            //     appendToRegistry(routeSchema);
+            // }
         } catch (error: any) {
             const schema = createRouteSchema(null, fileEntry, (schema) => {
                 schema.status = "error";

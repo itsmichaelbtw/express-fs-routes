@@ -408,6 +408,12 @@ Specify a directory that you wish to save a JSON output of the directory tree an
 
 Default: `.fs-routes`
 
+### `redactOutputFilePaths`
+
+Redact the file paths in the output JSON file. This is useful if you wish to share the output file with others, but do not want to expose the file paths on your machine. You will instead see `...`
+
+Default: `false`
+
 ### `silent`
 
 Whether to suppress any errors that may occur. If set to `true`, errors will be logged to the console. If set to `false`, errors will be thrown.
