@@ -25,7 +25,7 @@ import {
 } from "./utils";
 import { debug, DebugColors } from "./debug";
 
-type ExpressApp = express.Express;
+type ExpressApp = express.Application;
 
 type EnvironmentRoutes = {
     [key: string]: FilePath[];
@@ -251,7 +251,7 @@ function mergeWithDefaults(options: RouteRegistrationOptions): RouteRegistration
     return opts;
 }
 
-export function registerRoutes(app: ExpressApp, options: RouteRegistrationOptions): void {
+export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptions): void {
     options = mergeWithDefaults(options);
 
     debugOrThrowError.silent = options.silent;
