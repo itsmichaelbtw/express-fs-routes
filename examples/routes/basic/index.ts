@@ -1,6 +1,6 @@
 import express from "express";
 
-import { RouteHandlerOptions } from "../../lib";
+import { RouteHandlerOptions } from "../../../lib";
 
 const router = express.Router();
 
