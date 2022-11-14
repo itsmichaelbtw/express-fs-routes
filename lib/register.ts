@@ -410,11 +410,11 @@ export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptio
                 return schema;
             });
 
-            // if (routeHandler) {
-            //     addRoute(routeSchema, routeHandler);
-            // } else {
-            //     appendToRegistry(routeSchema);
-            // }
+            if (routeHandler) {
+                addRoute(routeSchema, routeHandler);
+            } else {
+                appendToRegistry(routeSchema);
+            }
         } catch (error: any) {
             const schema = createRouteSchema(null, fileEntry, (schema) => {
                 schema.status = "error";
