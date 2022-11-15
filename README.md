@@ -17,6 +17,7 @@ An intuitive way of defining and registering your routes for your express app. A
   - [Extended Url Paths](#extended-url-paths)
 - [Options](#options)
 - [Route Options](#route-options)
+- [Caveats](#caveats)
 - [FAQ](#faq)
 - [TypeScript](#typescript)
 - [Resources](#resources)
@@ -300,6 +301,8 @@ export const routeOptions: RouteHandlerOptions = {
 
 Important: When the `notImplemented` property is present, this will be used to register the route instead of the default route handler. This is NOT evaluated on each request, ONLY when the routes are first initially registered. If you wish to resume default behaviour, simply remove the `notImplemented` property and restart the server.
 
+See [Route Options](#route-options) for more information.
+
 ### Extended Url Paths
 
 You may think that you are limited to utilizing the directory structure to define your routes, but you are not. You can define additional url paths within the route file. This will be appended at runtime to the base url path and will work as expected.
@@ -425,50 +428,89 @@ Default: `false`
 A built-in feature this package provides is the ability to export a custom named object that will be used to control the registration behaviour of the route. This behaviour is only evaluated when registering the route. The object is not used by express in any way.
 
 ```typescript
-type NotImplementedCallback = (req: express.Request, res: express.Response) => void;  
+type NotImplementedCallback = (req: Request, res: Response, next: NextFunction) => void;
 
 export interface RouteHandlerOptions {
-    /**
-     * Specify certain environments you want this route to be registered in. If
-     * you wish to register a route in all environments, you can omit this property, or
-     * set it to `*`.
-     *
-     * This value takes precedence over `environmentRoutes`.
-     *
-     * Defaults to `*`.
-     */
     environments?: string | string[];
-    /**
-     * Whether this route should be treated as an index route. This route
-     * will be instead mounted at the parent directory.
-     *
-     * This value takes precedence over `indexNames`.
-     */
     isIndex?: boolean;
-    /**
-     * Sometimes you may require the route to still be publicly accessible, but
-     * don't want to perform it's default behaviour. You can provide custom logic to handle
-     * the request instead.
-     *
-     * Example: You may want to temporarily disable a login/register route, but still want to
-     * return a 200 response. The choice is yours.
-     * 
-     * If this value is passed, it will be used instead of the route handler.
-     */
     notImplemented?: NotImplementedCallback;
-    /**
-     * Control whether the route should be registered. The route will still be scanned and under go
-     * all the same checks, but will bypass express registration.
-     *
-     * Defaults to `true`.
-     */
     skip?: boolean;
 }
 ```
 
 > Note: When changing route options, you must restart the server for the changes to take effect.
 
+### `environments`
+
+Controls which environments this route should be registered in. This is not standardised, so you can specify any environment you want. As long as `NODE_ENV` is set to one of the values, the route will be registered.
+
+This value coincides with the `environmentRoutes` option. If this option is set, it will take precedence over `environmentRoutes`. 
+
+Rules this property follows:
+
+- When omitted, registration is controlled depending on the `environmentRoutes` option.
+- Providing any environment will **win** over `environmentRoutes`.
+- Setting this to `*` will register the route in all environments, regardless of `environmentRoutes`.
+
+Default: `undefined`
+
+### `isIndex`
+
+Whether this route should be treated as an index route. This route will be instead mounted at the parent directory, or will 'navigate up' a directory.
+
+This value takes precedence over `indexNames`.
+
+Default: `false`
+
+### `notImplemented`
+
+Sometimes you may require the route to still be publicly accessible, but don't want to perform it's default behaviour. You can provide custom logic to handle the request instead.
+
+Example: You may want to temporarily disable a login/register route, but still want to return a 200 response. The choice is yours.
+
+If this value is provided, this will be registered as the route handler instead of the default export.
+
+Default: `undefined`
+
+### `skip`
+
+Whether to skip this route entirely.
+
+Default: `false`
+
 See the [examples](examples) for more information.
+
+## Caveats
+
+Currently, when exporting the `routeOptions` object, if your file contains multiple routes, all routes will be affected by the options. This is a limitation of the current implementation and will be addressed in a future release.
+
+```typescript
+import express from 'express';
+
+import type { RouteHandlerOptions } from 'express-fs-routes';
+
+const router = express.Router();
+
+router.get("/foo", (req, res) => {
+  res.json({ message: 'foo' });
+});
+
+router.get("/bar", (req, res) => {
+  res.json({ message: 'bar' });
+});
+
+export default router
+
+export const routeOptions: RouteHandlerOptions = {
+  environments: ['production'],
+  notImplemented: (req, res) => {
+    res.status(503).json({ message: 'This route is currently unavailable' });
+  }
+};
+
+// all routes, both GET /foo and GET /bar will be affected by the options
+
+```
 
 ## FAQ
 
