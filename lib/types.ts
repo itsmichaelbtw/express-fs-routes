@@ -1,4 +1,4 @@
-import type { IRouter, Request, Response } from "express";
+import type { IRouter, Request, Response, NextFunction } from "express";
 
 type Methods =
     | "checkout"
@@ -25,13 +25,18 @@ type Methods =
     | "unlock"
     | "unsubscribe";
 
-type NotImplementedCallback = (req: Request, res: Response) => void;
+type NotImplementedCallback = (req: Request, res: Response, next: NextFunction) => void;
+
+type EnvironmentRoutes = {
+    [key: string]: FilePath[];
+};
 
 export type FilePath = string;
 
 export type TreeComponentType = "file" | "directory";
 export type DirectoryCallback = Function;
 export type DirectoryEnsemble = DirTree;
+export type RouteRegistry = RouteSchema[];
 
 /**
  * The directory tree is a recursive data structure that represents the directory
@@ -73,12 +78,20 @@ export interface RouteSchema {
      */
     absolutePath: FilePath;
     /**
-     * The url path of the route. This is the path that will be
+     * The relative path of the route. This is the path that will be
      * registered to the express app.
      *
      * This includes the app mount, if one was provided.
      */
-    url: string;
+    base_path: string;
+    /**
+     * If the route contains an internal route.
+     */
+    extended_path: string;
+    /**
+     * The full path of the route.
+     */
+    full_path: string;
     /**
      * Any options that were exported from the file.
      */
@@ -117,12 +130,11 @@ export interface RouteHandler extends IRouter {
 export interface RouteHandlerOptions {
     /**
      * Specify certain environments you want this route to be registered in. If
-     * you wish to register a route in all environments, you can omit this property, or
-     * set it to `*`.
+     * you wish to register a route in all environments, you can omit this property.
      *
-     * This value takes precedence over `environmentRoutes`.
+     * This value takes precedence over `environmentRoutes` when both are present.
      *
-     * Defaults to `*`.
+     * Defaults to `undefined`.
      */
     environments?: string | string[];
     /**
@@ -148,4 +160,109 @@ export interface RouteHandlerOptions {
      * Defaults to `true`.
      */
     skip?: boolean;
+}
+
+/**
+ * The options that are passed to the `registerRoutes` function.
+ */
+export interface RouteRegistrationOptions {
+    /**
+     * The root directory that contains all routes you wish to register.
+     * You may pass a relative path, or an absolute path. If you pass a relative path,
+     * it will be resolved relative to `__dirname`.
+     *
+     * Defaults to `routes`.
+     */
+    directory: FilePath;
+    /**
+     * An optional app mount that is appended to the start of each route.
+     *
+     * For example, if you are building an application that will be hosted at
+     * `https://example.com/api`, you would set this to `/api` to indicate that
+     * all routes should be mounted at `/api`.
+     *
+     * This is designed to eliminate the need to specify a directory for app mounts.
+     *
+     * Defaults to an empty string.
+     */
+    appMount?: string | null;
+    /**
+     * Define any routes that are specific to a certain environment. This
+     * is resolved relative to the `directory` option.
+     *
+     * ```
+     * {
+     *   environmentRoutes: {
+     *     development: ["users", "posts"],
+     *     production: ["users"],
+     *     test: ["users", "posts", "comments"],
+     *     staging: ["users", "posts"],
+     *     custom_env: ["foo", "bar"]
+     *   }
+     * }
+     * ```
+     *
+     * If you instead wish to use the root directory as the environment, you must
+     * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
+     *
+     * Note: Only accepts directories.
+     */
+    environmentRoutes?: EnvironmentRoutes;
+    /**
+     * Sometimes you may want to specify routes that act upon the root
+     * of a directory.
+     *
+     * For example, if you have a directory structure like this:
+     *
+     * ```
+     * routes/
+     *  users/
+     *    index.js
+     *    retrieve.js
+     * ```
+     *
+     * You can tell `registerRoutes` to treat `index.js` as the root of the
+     * `users` directory.
+     *
+     * Note: Only accepts filenames.
+     *
+     * Defaults to `[ "index.js" ]`.
+     */
+    indexNames?: string[];
+    /**
+     * Express parameters are supported by default. This allows you to specify
+     * a folder or file that will be used as a paramater.
+     *
+     * For example, if you have a route at `routes/users/:id/retrieve`,
+     * you can specify `id` as a parameter.
+     *
+     * Filepath: `routes/users/#id/retrieve.js`
+     *
+     * You may optionally specify a custom params token that will be used to
+     * test for parameters.
+     *
+     * Defaults to `#`.
+     */
+    paramsToken?: string | RegExp;
+    /**
+     * Specify a directory to save a JSON file that contains a tree of all
+     * registered routes, and a registry of all route handlers. This is useful
+     * for debugging purposes.
+     *
+     * Set this to `false` to disable this feature.
+     *
+     * Defaults to `.fs-routes`.
+     */
+    output?: string | false | null;
+    /**
+     * Choose if you wish to redact the file output paths for security reasons.
+     */
+    redactOutputFilePaths?: boolean;
+    /**
+     * Whether errors should be thrown. If this is set to `false`, operations will
+     * continue as normal.
+     *
+     * Defaults to `false`.
+     */
+    silent?: boolean;
 }
