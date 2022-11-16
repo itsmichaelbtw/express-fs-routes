@@ -1,6 +1,5 @@
 import chai from "chai";
 import path from "path";
-import fs from "fs";
 
 import { createDirectoryTree } from "../lib/directory-tree";
 
@@ -11,14 +10,13 @@ function join(...pathName: string[]): string {
 describe("directoryTree()", () => {
     it("should create a directory tree", () => {
         const examplesDir = join("examples/routes");
-        const outputDir = join("examples/.fs-routes");
 
         const directoryTree = createDirectoryTree(examplesDir, () => {});
 
-        const expectedTree = JSON.parse(
-            fs.readFileSync(path.join(outputDir, "directory_tree.json"), "utf8")
-        );
-
-        chai.expect(directoryTree).to.deep.equal(expectedTree);
+        chai.expect(directoryTree).to.be.an("object");
+        chai.expect(directoryTree).to.have.property("name");
+        chai.expect(directoryTree).to.have.property("path");
+        chai.expect(directoryTree).to.have.property("type");
+        chai.expect(directoryTree).to.have.property("children");
     });
 });
