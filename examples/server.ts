@@ -17,9 +17,6 @@ registerRoutes(app, {
     directory: join("routes"),
     appMount: "/api",
     output: join(".fs-routes"),
-    environmentRoutes: {
-        development: [join("routes")]
-    },
     silent: true
 });
 
