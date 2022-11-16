@@ -27,6 +27,22 @@ export function isEmpty(value: any): boolean {
     }
 }
 
+export function forEach<T>(obj: T, fn: (key: keyof T, value: T[keyof T], obj: T) => void): void {
+    if (isUndefined(obj)) {
+        return;
+    }
+
+    if (isArray(obj)) {
+        obj.forEach(function (value, index) {
+            fn.call(null, index, value, obj);
+        });
+    } else {
+        for (const key in obj) {
+            fn.call(null, key, obj[key], obj);
+        }
+    }
+}
+
 export function ensureLeadingToken(value: string, token: string): string {
     if (!value.startsWith(token)) {
         return `${token}${value}`;
