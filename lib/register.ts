@@ -27,15 +27,15 @@ import {
     isFunction,
     isUndefined,
     isString,
-    forEach
+    forEach,
+    getCurrentWorkingEnvironment
 } from "./utils";
 import {
     DEFAULT_OPTIONS,
     DEFAULT_ROUTE_OPTIONS,
     EXPRESS_BASE_REGEX,
     EXPRESS_PARAMS_TOKEN,
-    WILD_CARD_TOKEN,
-    CURRENT_ENVIRONMENT
+    WILD_CARD_TOKEN
 } from "./constants";
 import { parseRouteRegistrationOptions, parseRouterHandlerOptions } from "./parse-options";
 import { debug, DebugColors } from "./debug";
@@ -120,11 +120,16 @@ export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptio
 
     const use = app.use;
 
+    const CURRENT_ENVIRONMENT = getCurrentWorkingEnvironment();
+
     const resolvedDirectory = path.resolve(options.directory);
     const tree = createDirectoryTree(resolvedDirectory, onFile);
 
     function appendToRegistry(routes: RouteRegistry): void {
         for (const routeSchema of routes) {
+            // @ts-expect-error
+            routeSchema.routeOptions.notImplemented = !!routeSchema.routeOptions.notImplemented;
+
             routeRegistry.push(routeSchema);
         }
     }

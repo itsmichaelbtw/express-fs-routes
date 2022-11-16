@@ -62,3 +62,7 @@ export function ensureTrailingToken(value: string, token: string): string {
 export function removeFileExtension(value: string): string {
     return value.replace(/\.[^/.]+$/, "");
 }
+
+export function getCurrentWorkingEnvironment(): string {
+    return process.env.NODE_ENV || "development";
+}
