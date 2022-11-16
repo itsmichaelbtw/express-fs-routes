@@ -1,16 +1,15 @@
 import express from "express";
 
-import { RouteHandlerOptions } from "../../../lib";
+import { RouteHandlerOptions } from "../../../../lib";
 
 const router = express.Router();
 
 router.get("/", (req, res) => {
-    res.send("Hello World!");
+    res.send("This is a production route! This is only available in production.");
 });
 
 export default router;
 
 export const routeOptions: RouteHandlerOptions = {
-    // ...
-    isIndex: false // controlled instead by registerRoutes.indexNames
+    environments: ["production"]
 };
