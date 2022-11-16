@@ -10,7 +10,9 @@ import type {
     RouteHandler,
     RouteHandlerOptions,
     DirTree,
-    RouteSchema
+    RouteSchema,
+    RouteRegistry,
+    RouteRegistrationOptions
 } from "./types";
 
 import { createDirectoryTree } from "./directory-tree";
@@ -21,131 +23,24 @@ import {
     ensureLeadingToken,
     ensureTrailingToken,
     removeFileExtension,
-    isArray
+    isArray,
+    isFunction,
+    isUndefined,
+    isString,
+    forEach
 } from "./utils";
+import {
+    DEFAULT_OPTIONS,
+    DEFAULT_ROUTE_OPTIONS,
+    EXPRESS_BASE_REGEX,
+    EXPRESS_PARAMS_TOKEN,
+    WILD_CARD_TOKEN,
+    CURRENT_ENVIRONMENT
+} from "./constants";
+import { parseRouteRegistrationOptions, parseRouterHandlerOptions } from "./parse-options";
 import { debug, DebugColors } from "./debug";
 
 type ExpressApp = express.Application;
-
-type EnvironmentRoutes = {
-    [key: string]: FilePath[];
-};
-
-interface RouteRegistrationOptions {
-    /**
-     * The root directory that contains all routes you wish to register.
-     * You may pass a relative path, or an absolute path. If you pass a relative path,
-     * it will be resolved relative to `__dirname`.
-     *
-     * Defaults to `routes`.
-     */
-    directory: FilePath;
-    /**
-     * An optional app mount that is appended to the start of each route.
-     *
-     * For example, if you are building an application that will be hosted at
-     * `https://example.com/api`, you would set this to `/api` to indicate that
-     * all routes should be mounted at `/api`.
-     *
-     * This is designed to eliminate the need to specify a directory for app mounts.
-     *
-     * Defaults to an empty string.
-     */
-    appMount?: string | null;
-    /**
-     * Define any routes that are specific to a certain environment. This
-     * is resolved relative to the `directory` option.
-     *
-     * ```
-     * {
-     *   environmentRoutes: {
-     *     development: ["users", "posts"],
-     *     production: ["users"],
-     *     test: ["users", "posts", "comments"],
-     *     staging: ["users", "posts"],
-     *     custom_env: ["foo", "bar"]
-     *   }
-     * }
-     * ```
-     *
-     * If you instead wish to use the root directory as the environment, you must
-     * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
-     *
-     * Note: Only accepts directories.
-     */
-    environmentRoutes?: EnvironmentRoutes;
-    /**
-     * Sometimes you may want to specify routes that act upon the root
-     * of a directory.
-     *
-     * For example, if you have a directory structure like this:
-     *
-     * ```
-     * routes/
-     *  users/
-     *    index.js
-     *    retrieve.js
-     * ```
-     *
-     * You can tell `registerRoutes` to treat `index.js` as the root of the
-     * `users` directory.
-     *
-     * Note: Only accepts filenames.
-     *
-     * Defaults to `[ "index.js" ]`.
-     */
-    indexNames?: string[];
-    /**
-     * Express parameters are supported by default. This allows you to specify
-     * a folder or file that will be used as a paramater.
-     *
-     * For example, if you have a route at `routes/users/:id/retrieve`,
-     * you can specify `id` as a parameter.
-     *
-     * Filepath: `routes/users/#id/retrieve.js`
-     *
-     * You may optionally specify a custom params token that will be used to
-     * test for parameters.
-     *
-     * Defaults to `#`.
-     */
-    paramsToken?: string | RegExp;
-    /**
-     * Specify a directory to save a JSON file that contains a tree of all
-     * registered routes, and a registry of all route handlers. This is useful
-     * for debugging purposes.
-     *
-     * Set this to `false` to disable this feature.
-     *
-     * Defaults to `.fs-routes`.
-     */
-    output?: string | false | null;
-    /**
-     * Choose if you wish to redact the file output paths for security reasons.
-     */
-    redactOutputFilePaths?: boolean;
-    /**
-     * Whether errors should be thrown. If this is set to `false`, operations will
-     * continue as normal.
-     *
-     * Defaults to `false`.
-     */
-    silent?: boolean;
-}
-
-const DEFAULT_OPTIONS: RouteRegistrationOptions = {
-    directory: "routes",
-    appMount: "",
-    indexNames: ["index.js"],
-    paramsToken: "#",
-    output: ".fs-routes",
-    silent: false
-};
-
-const EXPRESS_PARAMS_TOKEN = ":";
-const EXPRESS_BASE_REGEX = /^\/?$/i;
-const WILD_CARD_TOKEN = "*";
-const CURRENT_ENVIRONMENT = process.env.NODE_ENV || "development";
 
 function convertPathRegex(path: FilePath): RegExp {
     return pathToRegexp(path);
@@ -167,18 +62,17 @@ function getRouteOptions(handler: RouteHandler): RouteHandlerOptions {
     // each individual handler exports a property called `routeOptions`
     // which controls the route's behavior when it is registered.
 
-    if (handler && handler.routeOptions && isObject(handler.routeOptions)) {
-        if (!handler.routeOptions.environments) {
-            handler.routeOptions.environments = WILD_CARD_TOKEN;
-        }
+    // create a default route options and merge it with the handler's
+    // route options.
 
-        return handler.routeOptions;
+    if (handler && handler.routeOptions && isObject(handler.routeOptions)) {
+        return parseRouterHandlerOptions(handler.routeOptions);
     }
 
-    return { environments: WILD_CARD_TOKEN };
+    return DEFAULT_ROUTE_OPTIONS;
 }
 
-function parseHandler(handler: any, path: FilePath): RouteHandler | null {
+function transformHandler(handler: any, path: FilePath): RouteHandler | null {
     const errorMessage = `The default export of a route must be a function. Found at: ${path}`;
     function handleNonFunction(): void {
         debugOrThrowError(errorMessage, "red");
@@ -217,84 +111,104 @@ function debugOrThrowError(message: string, color: DebugColors): void {
 
 debugOrThrowError.silent = DEFAULT_OPTIONS.silent;
 
-function mergeWithDefaults(options: RouteRegistrationOptions): RouteRegistrationOptions {
-    if (!isObject(options)) {
-        return DEFAULT_OPTIONS;
-    }
-
-    const opts = Object.assign({}, DEFAULT_OPTIONS, options);
-
-    if (typeof opts.directory !== "string") {
-        opts.directory = DEFAULT_OPTIONS.directory;
-    }
-
-    if (typeof opts.appMount !== "string" && opts.appMount !== null) {
-        opts.appMount = DEFAULT_OPTIONS.appMount;
-    }
-
-    if (!isObject(opts.environmentRoutes)) {
-        opts.environmentRoutes = {};
-    }
-
-    if (!isArray(opts.indexNames)) {
-        opts.indexNames = DEFAULT_OPTIONS.indexNames;
-    }
-
-    if (typeof opts.output !== "string" && opts.output !== false && opts.output !== null) {
-        opts.output = DEFAULT_OPTIONS.output;
-    }
-
-    if (typeof opts.silent !== "boolean") {
-        opts.silent = DEFAULT_OPTIONS.silent;
-    }
-
-    return opts;
-}
-
 export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptions): void {
-    options = mergeWithDefaults(options);
+    options = parseRouteRegistrationOptions(options);
 
     debugOrThrowError.silent = options.silent;
 
-    const routeRegistry: RouteSchema[] = [];
+    const routeRegistry: RouteRegistry = [];
+
+    const use = app.use;
 
     const resolvedDirectory = path.resolve(options.directory);
     const tree = createDirectoryTree(resolvedDirectory, onFile);
 
-    function appendToRegistry(route: RouteSchema): void {
-        routeRegistry.push(route);
+    function appendToRegistry(routes: RouteRegistry): void {
+        for (const routeSchema of routes) {
+            routeRegistry.push(routeSchema);
+        }
     }
 
-    function addRoute(route: RouteSchema, handler: RouteHandler): void {
-        const expressApp = app.use.bind(app);
+    function addRoutes(routes: RouteRegistry, handler: RouteHandler): void {
+        function environmentBasedRegistration(
+            routeSchema: RouteSchema,
+            callback: (proceed: boolean) => void
+        ): void {
+            const routeOptions = routeSchema.routeOptions;
 
-        const directoryEnvironments = options.environmentRoutes[CURRENT_ENVIRONMENT];
-        const routeEnvironments = route.routeOptions.environments;
+            if (isUndefined(routeOptions.environments) && isEmpty(options.environmentRoutes)) {
+                return callback(true);
+            }
 
-        // will want to make these 2 arrays work together
+            if (isArray(routeOptions.environments)) {
+                const proceed = routeOptions.environments.some((environment) => {
+                    return environment === WILD_CARD_TOKEN || environment === CURRENT_ENVIRONMENT;
+                });
 
-        // if (isArray(directoryEnvironments) && !isEmpty(directoryEnvironments)) {
-        //     for (const directory of directoryEnvironments) {
-        //         const directoryPath = path.resolve(resolvedDirectory, directory);
+                return callback(proceed);
+            }
 
-        //         if (route.absolutePath.startsWith(directoryPath)) {
-        //             route.status = "skipped";
-        //             route.message = `Route is in a directory that is disabled for the current environment: ${CURRENT_ENVIRONMENT}`;
+            // set the proceed flag to null
+            // this indicates that the current routeSchema
+            // has no environment restrictions
+            let proceed = null;
 
-        //             return appendToRegistry(route);
-        //         }
-        //     }
-        // }
+            forEach(options.environmentRoutes, (nodeEnv, environments) => {
+                forEach(environments, (index, filePath) => {
+                    const resolvedFilePath = path.resolve(filePath as string);
 
-        expressApp(route.url, handler);
+                    if (routeSchema.absolutePath.startsWith(resolvedFilePath)) {
+                        if (proceed === false || proceed === null) {
+                            proceed = nodeEnv === CURRENT_ENVIRONMENT;
+                        }
+                    }
+                });
+            });
 
-        route.status = "registered";
-        routeRegistry.push(route);
+            if (proceed === null) {
+                callback(true);
+            } else {
+                callback(proceed);
+            }
+        }
+
+        for (const route of routes) {
+            const routeOptions = route.routeOptions;
+
+            if (routeOptions.skip) {
+                route.status = "skipped";
+                route.message = "Route was skipped by the routeOptions.skip property";
+
+                continue;
+            }
+
+            environmentBasedRegistration(route, (proceed) => {
+                if (proceed) {
+                    if (isFunction(routeOptions.notImplemented)) {
+                        use.call(app, route.base_path, routeOptions.notImplemented);
+                    } else {
+                        use.call(app, route.base_path, handler);
+                    }
+
+                    route.status = "registered";
+                    route.message = `Registered for environment: ${CURRENT_ENVIRONMENT}`;
+                } else {
+                    route.status = "skipped";
+                    route.message = `Route is not enabled for the current environment: ${CURRENT_ENVIRONMENT}`;
+                }
+            });
+        }
+
+        appendToRegistry(routes);
     }
 
     function createRouteUrl(relativePath: string, urlModifier: (url: string) => string): string {
         let routePath = removeFileExtension(relativePath);
 
+        // need to fix indexNames, if routeOptions.indexNames is set, use that
+        // otherwise use the default indexNames
+
+        // if indexNames is false, then don't do anything
         for (const indexName of options.indexNames) {
             const name = removeFileExtension(indexName);
 
@@ -325,66 +239,62 @@ export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptio
         handler: RouteHandler | null,
         fileEntry: DirectoryEnsemble,
         modifier: (path: RouteSchema, routeOptions: RouteHandlerOptions) => RouteSchema
-    ): RouteSchema {
+    ): RouteRegistry {
         const baseSchema: RouteSchema = {
             method: null,
             absolutePath: fileEntry.path,
             routeOptions: {},
             status: null,
-            url: null
+            base_path: null,
+            extended_path: null,
+            full_path: null
         };
 
-        if (handler === null) {
-            return modifier(baseSchema, {});
+        if (handler === null || isEmpty(handler.stack)) {
+            return [modifier(baseSchema, {})];
         }
 
-        const handlerStack = handler.stack[0];
-        const routeOptions = handler.routeOptions;
+        const schemas: RouteRegistry = [];
 
-        // i think it would be neccessary to create a route schema for each
-        // stack that is attached to the handler
-        const method = handlerStack.route.stack[0].method.toUpperCase();
+        for (const layer of handler.stack) {
+            const route = layer.route;
+            const extendedPath = route.path;
+            const method = route.stack[0].method;
 
-        const routeUrl = createRouteUrl(fileEntry.path, (url) => {
-            if (routeOptions.isIndex) {
-                const base = ensureLeadingToken(path.basename(url), "/").replace(/\/$/, "");
+            const mergedSchema: RouteSchema = {
+                ...baseSchema,
+                method: method,
+                routeOptions: handler.routeOptions
+            };
 
-                if (base !== options.appMount) {
-                    url = url.replace(base, "");
+            const routeUrl = createRouteUrl(fileEntry.path, (url) => {
+                if (handler.routeOptions.isIndex) {
+                    const base = ensureLeadingToken(path.basename(url), "/").replace(/\/$/, "");
+
+                    if (base !== options.appMount) {
+                        url = url.replace(base, "");
+                    }
                 }
-            }
 
-            // if a route has an internal url, for now this works
-            // but I am not comfortable with changing the url that
-            // is managed by express
+                mergedSchema.base_path = url;
 
-            // future
-            // if an internal URL is present, only use the relative path
-            // and let express handle the rest
-            // what about saving it as json?
-            // have a new key that represents the extended url
+                if (extendedPath && extendedPath !== "/") {
+                    url = url + extendedPath;
+                    mergedSchema.extended_path = extendedPath;
+                }
 
-            // express doubles up on the path
+                const paramsTokenReplacer = formulateTokenRegex(options.paramsToken);
+                url = url.replace(paramsTokenReplacer, EXPRESS_PARAMS_TOKEN);
 
-            // if (extendedUrl && extendedUrl !== "/") {
-            //     url = url + extendedUrl;
-            //     handler.stack[0].regexp = EXPRESS_BASE_REGEX;
-            //     handler.stack[0].route.path = "/";
-            // }
+                return ensureLeadingToken(url, "/");
+            });
 
-            const paramsTokenReplacer = formulateTokenRegex(options.paramsToken);
-            url = url.replace(paramsTokenReplacer, EXPRESS_PARAMS_TOKEN);
+            mergedSchema.full_path = routeUrl;
 
-            return ensureLeadingToken(url, "/");
-        });
+            schemas.push(modifier(mergedSchema, handler.routeOptions));
+        }
 
-        const schema = Object.assign({}, baseSchema, {
-            method: method,
-            routeOptions: routeOptions,
-            url: routeUrl
-        });
-
-        return modifier(schema, routeOptions);
+        return schemas;
     }
 
     function onFile(fileEntry: DirectoryEnsemble): void {
@@ -397,21 +307,24 @@ export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptio
                     schema.error = "File is empty.";
                     return schema;
                 });
+
                 appendToRegistry(schema);
                 return debugOrThrowError(`Route handler at ${fileEntry.path} is empty.`, "yellow");
             }
 
-            const routeHandler = parseHandler(requireHandler, fileEntry.path);
+            const routeHandler = transformHandler(requireHandler, fileEntry.path);
+
             const routeSchema = createRouteSchema(routeHandler, fileEntry, (schema) => {
                 if (routeHandler === null) {
                     schema.status = "error";
+                    schema.error = "Likely you forgot to export a function.";
                 }
 
                 return schema;
             });
 
             if (routeHandler) {
-                addRoute(routeSchema, routeHandler);
+                addRoutes(routeSchema, routeHandler);
             } else {
                 appendToRegistry(routeSchema);
             }
@@ -434,5 +347,3 @@ export function registerRoutes(app: ExpressApp, options?: RouteRegistrationOptio
         });
     }
 }
-
-// create a visualis representation of all api routes that are registered
