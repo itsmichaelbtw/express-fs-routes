@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v1.0.0...v1.0.1) (2022-11-16)
+
+
+### Fixed
+
+* **fs-routes:** multiple handler stacks not registering correctly ([3e1cb0e](https://github.com/itsmichaelbtw/express-fs-routes/commit/3e1cb0e706c32b55531caf82c1f78a50a11ecd43))
+* process.env.NODE_ENV is now evualuated on each call ([9a569b1](https://github.com/itsmichaelbtw/express-fs-routes/commit/9a569b127801f87b414dbcadee9927b66351f198))
+
 ## 1.0.0 (2022-11-14)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "express-fs-routes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatically create Express routes with one line of code using the file system. No more hard coding routes into your project's main file.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

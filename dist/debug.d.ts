@@ -4,6 +4,6 @@ declare const colors: {
     green: string;
     lightblue: string;
 };
-export declare type DebugColors = keyof typeof colors;
+export type DebugColors = keyof typeof colors;
 export declare function debug(message: string, color: DebugColors): void;
 export {};
