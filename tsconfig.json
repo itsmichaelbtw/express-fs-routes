@@ -1,16 +1,22 @@
 {
     "compilerOptions": {
-        "lib": ["ES2015"],
-        "target": "ES6",
-        "module": "commonjs",
+        "lib": ["ESNext"],
+        "target": "ES2015",
+        "module": "ESNext",
         "moduleResolution": "Node",
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "allowJs": true,
         "declaration": true,
-        "declarationDir": "dist",
-        "outDir": "dist"
+        "declarationDir": "./dist/types",
+        "resolveJsonModule": true
     },
-    "include": ["./lib"],
-    "exclude": ["test", "node_modules"]
+    "ts-node": {
+        "esm": true,
+        "compilerOptions": {
+            "module": "ES2020"
+        },
+    },
+    "include": ["lib"],
+    "exclude": ["test", "node_modules", "dist"],
 }
