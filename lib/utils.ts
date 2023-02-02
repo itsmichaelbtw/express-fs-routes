@@ -1,6 +1,11 @@
 export function isUndefined(value: unknown): value is undefined {
     return typeof value === "undefined";
 }
+
+export function isNil(value: unknown): value is null | undefined {
+    return value === null || isUndefined(value);
+}
+
 export function isArray<T>(value: unknown): value is T[] {
     return Array.isArray(value);
 }
@@ -65,4 +70,18 @@ export function removeFileExtension(value: string): string {
 
 export function getCurrentWorkingEnvironment(): string {
     return process.env.NODE_ENV || "development";
+}
+
+export async function asyncReduce<T, U>(
+    array: T[],
+    callback: (accumulator: U, current: T) => Promise<U>,
+    initialValue: U
+): Promise<U> {
+    let accumulator = initialValue;
+
+    for (const current of array) {
+        accumulator = await callback(accumulator, current);
+    }
+
+    return accumulator;
 }
