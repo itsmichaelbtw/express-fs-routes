@@ -1,4 +1,4 @@
-import type { IRouter, Request, Response, NextFunction } from "express";
+import type { IRouter } from "express";
 
 type Methods =
     | "checkout"
@@ -25,30 +25,46 @@ type Methods =
     | "unlock"
     | "unsubscribe";
 
-type NotImplementedCallback = (req: Request, res: Response, next: NextFunction) => void;
-
-type EnvironmentRoutes = {
+interface EnvironmentRoutes {
     [key: string]: FilePath[];
-};
+}
 
+export interface ParamsRegex {
+    [key: string]: RegExp | string;
+}
+
+/**
+ * The file path to a given route file.
+ */
 export type FilePath = string;
 
+/**
+ * The component type of a given node within
+ * the directory tree.
+ */
 export type TreeComponentType = "file" | "directory";
-export type DirectoryCallback = Function;
-export type DirectoryEnsemble = DirTree;
+
+/**
+ * The callback function that is called when
+ * a directory is traversed and a file is found.
+ */
+export type DirectoryCallback = (fileEntry: DirectoryTree) => Promise<void>;
+
+/**
+ * The registry of routes that are registered to
+ * the express app.
+ */
 export type RouteRegistry = RouteSchema[];
 
 /**
- * The directory tree is a recursive data structure that represents the directory
+ * The directory tree is a recursive data structure that represents the
  * structure of a given directory. It is used to register routes.
- *
- * This is the returned structure when calling `createDirectoryTree`.
  */
-export interface DirTree {
+export interface DirectoryTree {
     /**
      * The absolute path to the directory or file.
      */
-    path: FilePath;
+    absolute_path: FilePath;
     /**
      * The name of the directory or file.
      */
@@ -61,12 +77,13 @@ export interface DirTree {
      * The children of the directory. This will only be present if the component type
      * is `directory`.
      */
-    children?: DirTree[];
+    children?: DirectoryTree[];
 }
 
 /**
- * A generated route schema created after the directory tree is traversed.
- * This provides a visual representation of the routes that will be registered.
+ * A generated route schema created after the directory is traversed.
+ * This provides a visual representation of the routes that will
+ * be registered.
  */
 export interface RouteSchema {
     /**
@@ -76,12 +93,10 @@ export interface RouteSchema {
     /**
      * The absolute path of the file location.
      */
-    absolutePath: FilePath;
+    absolute_path: FilePath;
     /**
-     * The relative path of the route. This is the path that will be
-     * registered to the express app.
-     *
-     * This includes the app mount, if one was provided.
+     * The relative path of the route. Does not include
+     * the extended path.
      */
     base_path: string;
     /**
@@ -89,13 +104,16 @@ export interface RouteSchema {
      */
     extended_path: string;
     /**
-     * The full path of the route.
+     * The full path of the route. This is the combination of the
+     * base path and the extended path.
+     *
+     * This is used to register the route to the express app.
      */
     full_path: string;
     /**
      * Any options that were exported from the file.
      */
-    routeOptions: RouteHandlerOptions;
+    route_options: RouterOptions;
     /**
      * The status of the route.
      */
@@ -120,21 +138,22 @@ export interface RouteHandler extends IRouter {
      *
      * This is not a native express property.
      */
-    routeOptions?: RouteHandlerOptions;
+    routeOptions?: RouterOptions;
 }
 
 /**
  * User defined options that can be exported from a route file.
  * This is used to control the registration behavior of a given route.
  */
-export interface RouteHandlerOptions {
+export interface RouterOptions {
     /**
      * Specify certain environments you want this route to be registered in. If
-     * you wish to register a route in all environments, you can omit this property.
+     * you wish to register a route in all environments, you can omit this property
+     * or provide a wild card token `*`.
      *
      * This value takes precedence over `environmentRoutes` when both are present.
      *
-     * Defaults to `undefined`.
+     * Defaults to `null`.
      */
     environments?: string | string[];
     /**
@@ -142,17 +161,10 @@ export interface RouteHandlerOptions {
      * will be instead mounted at the parent directory.
      *
      * This value takes precedence over `indexNames`.
+     *
+     * If you have defined a path that is
      */
     isIndex?: boolean;
-    /**
-     * Sometimes you may require the route to still be publicly accessible, but
-     * don't want to perform it's default behaviour. You can provide custom logic to handle
-     * the request instead.
-     *
-     * Example: You may want to temporarily disable a login/register route, but still want to
-     * return a 200 response. The choice is yours.
-     */
-    notImplemented?: NotImplementedCallback;
     /**
      * Control whether the route should be registered. The route will still be scanned and under go
      * all the same checks, but will bypass express registration.
@@ -160,6 +172,26 @@ export interface RouteHandlerOptions {
      * Defaults to `true`.
      */
     skip?: boolean;
+    /**
+     * Specify a custom parameter regex that will be used when
+     * registering the route to the express app.
+     *
+     * It supports nested parameters, and will be used to replace
+     * the default regex.
+     *
+     * ```ts
+     * export const routeOptions: RouterOptions = {
+     *  paramsRegex: {
+     *    post_id: /post_id_[a-z]+/,
+     *    user_id: /user_id_[a-z]+/
+     *  }
+     * }
+     * ```
+     *
+     * Accepts either a string or a RegExp. If a RegExp is provided,
+     * it will be converted to a string using `.source`.
+     */
+    paramsRegex?: ParamsRegex;
 }
 
 /**
@@ -169,7 +201,7 @@ export interface RouteRegistrationOptions {
     /**
      * The root directory that contains all routes you wish to register.
      * You may pass a relative path, or an absolute path. If you pass a relative path,
-     * it will be resolved relative to `__dirname`.
+     * it will be resolved relative to `process.cwd()`.
      *
      * Defaults to `routes`.
      */
@@ -229,21 +261,6 @@ export interface RouteRegistrationOptions {
      * Defaults to `[ "index.js" ]`.
      */
     indexNames?: string[];
-    /**
-     * Express parameters are supported by default. This allows you to specify
-     * a folder or file that will be used as a paramater.
-     *
-     * For example, if you have a route at `routes/users/:id/retrieve`,
-     * you can specify `id` as a parameter.
-     *
-     * Filepath: `routes/users/#id/retrieve.js`
-     *
-     * You may optionally specify a custom params token that will be used to
-     * test for parameters.
-     *
-     * Defaults to `#`.
-     */
-    paramsToken?: string | RegExp;
     /**
      * Specify a directory to save a JSON file that contains a tree of all
      * registered routes, and a registry of all route handlers. This is useful
