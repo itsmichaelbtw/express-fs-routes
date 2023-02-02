@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v1.0.1...v2.0.0) (2023-02-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* This feature introduces a new way to register routes in Express and requires change to existing code by instantiating the new `RouteEngine` class.
+
+### What's New
+
+* added internal utils for async reducer ([d3322b0](https://github.com/itsmichaelbtw/express-fs-routes/commit/d3322b0a239dca8ca32ade2abb9e882d077279d0))
+* changed default options for route engine ([96a503d](https://github.com/itsmichaelbtw/express-fs-routes/commit/96a503dd67f10bbc518f7b4ea15ea6c72b5c3ca3))
+* improved overall exportable types including JSDoc comments ([a71bfc2](https://github.com/itsmichaelbtw/express-fs-routes/commit/a71bfc25d52de8853a94655e944b832fb4bde4b3))
+* new routing engine class for express route registration ([41d4f4b](https://github.com/itsmichaelbtw/express-fs-routes/commit/41d4f4b5827dfb02ee963444723959a46f496475))
+* revised file output with file path redact support ([d3b2203](https://github.com/itsmichaelbtw/express-fs-routes/commit/d3b22031eceadfccd998843b298bf83dd8b1a3d8))
+
 ### [1.0.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v1.0.0...v1.0.1) (2022-11-16)
 
 
