@@ -1,2 +1,2 @@
-export * from "./register";
+export * from "./route-registration";
 export * from "./types";

@@ -1,4 +1,4 @@
-import type { RouteRegistrationOptions, RouteHandlerOptions } from "./types";
+import type { RouteRegistrationOptions, RouterOptions } from "./types";
 
 import { isObject, isArray, isFunction, isString, isEmpty } from "./utils";
 import { DEFAULT_OPTIONS, DEFAULT_ROUTE_OPTIONS } from "./constants";
@@ -32,27 +32,15 @@ export function parseRouteRegistrationOptions(
         opts.output = DEFAULT_OPTIONS.output;
     }
 
-    if (
-        !isString(opts.paramsToken) &&
-        !(opts.paramsToken instanceof RegExp) &&
-        opts.paramsToken !== null
-    ) {
-        opts.paramsToken = DEFAULT_OPTIONS.paramsToken;
-    }
-
     return opts;
 }
 
-export function parseRouterHandlerOptions(options: RouteHandlerOptions): RouteHandlerOptions {
+export function parseRouterHandlerOptions(options: RouterOptions): RouterOptions {
     if (!isObject(options)) {
         return DEFAULT_ROUTE_OPTIONS;
     }
 
     const opts = Object.assign({}, DEFAULT_ROUTE_OPTIONS, options);
-
-    if (!isFunction(opts.notImplemented)) {
-        opts.notImplemented = DEFAULT_ROUTE_OPTIONS.notImplemented;
-    }
 
     if (opts.environments !== undefined) {
         if (isString(opts.environments)) {
@@ -60,6 +48,24 @@ export function parseRouterHandlerOptions(options: RouteHandlerOptions): RouteHa
         } else if (!isArray(opts.environments) || isEmpty(opts.environments)) {
             opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
         }
+    }
+
+    if (!isEmpty(options.paramsRegex)) {
+        for (const pathName in options.paramsRegex) {
+            const pathRegex = options.paramsRegex[pathName];
+
+            if (isString(pathRegex)) {
+                continue;
+            }
+
+            if (pathRegex instanceof RegExp) {
+                options.paramsRegex[pathName] = pathRegex.source;
+            } else {
+                delete options.paramsRegex[pathName];
+            }
+        }
+    } else {
+        opts.paramsRegex = {};
     }
 
     return opts;

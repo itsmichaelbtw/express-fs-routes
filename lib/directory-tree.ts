@@ -1,7 +1,15 @@
 import fs from "fs";
 import path from "path";
 
-import type { FilePath, TreeComponentType, DirectoryCallback, DirectoryEnsemble } from "./types";
+import type {
+    FilePath,
+    TreeComponentType,
+    DirectoryCallback,
+    DirectoryTree,
+    RouteRegistry
+} from "./types";
+
+import { asyncReduce } from "./utils";
 
 const FILE_FILTER = /^([^\.].*)(?<!\.d)\.(js|ts)$/;
 
@@ -13,13 +21,10 @@ function statsSync(filePath: FilePath) {
     return fs.statSync(filePath);
 }
 
-function newComponentEntry(
-    relativePath: FilePath,
-    component: TreeComponentType
-): DirectoryEnsemble {
-    const entry: DirectoryEnsemble = {
+function newComponentEntry(relativePath: FilePath, component: TreeComponentType): DirectoryTree {
+    const entry: DirectoryTree = {
         name: path.basename(relativePath),
-        path: relativePath,
+        absolute_path: relativePath,
         type: component
     };
 
@@ -30,7 +35,17 @@ function newComponentEntry(
     return entry;
 }
 
-export function createDirectoryTree(dir: FilePath, onFile: DirectoryCallback): DirectoryEnsemble {
+/**
+ * Creates a directory tree from a given directory path.
+ *
+ * @param dir The directory path.
+ * @param onFile A callback function that is called for each file.
+ * @returns A promise that resolves to a directory tree.
+ */
+export async function createDirectoryTree(
+    dir: FilePath,
+    onFile: DirectoryCallback
+): Promise<DirectoryTree> {
     const directory = readDirectorySync(dir);
 
     if (directory.length === 0) {
@@ -40,29 +55,33 @@ export function createDirectoryTree(dir: FilePath, onFile: DirectoryCallback): D
     const resolvedPath = dir;
     const componentEntry = newComponentEntry(resolvedPath, "directory");
 
-    const directoryEnsemble = directory.reduce((directoryTree, file) => {
-        const filePath = path.join(resolvedPath, file);
-        const fileStats = statsSync(filePath);
+    const directoryTree = await asyncReduce(
+        directory,
+        async (tree, file) => {
+            const filePath = path.join(resolvedPath, file);
+            const fileStats = statsSync(filePath);
 
-        if (fileStats.isDirectory()) {
-            const child = createDirectoryTree(filePath, onFile);
+            if (fileStats.isDirectory()) {
+                const child = await createDirectoryTree(filePath, onFile);
 
-            if (child) {
-                directoryTree.children.push(child);
+                if (child) {
+                    tree.children.push(child);
+                }
+            } else if (fileStats.isFile()) {
+                const isFile = FILE_FILTER.test(file);
+
+                if (isFile) {
+                    const fileEntry = newComponentEntry(filePath, "file");
+
+                    await onFile(fileEntry);
+                    tree.children.push(fileEntry);
+                }
             }
-        } else if (fileStats.isFile()) {
-            const isFile = FILE_FILTER.test(file);
 
-            if (isFile) {
-                const fileEntry = newComponentEntry(filePath, "file");
+            return tree;
+        },
+        componentEntry
+    );
 
-                onFile(fileEntry);
-                directoryTree.children.push(fileEntry);
-            }
-        }
-
-        return directoryTree;
-    }, componentEntry);
-
-    return directoryEnsemble;
+    return directoryTree;
 }
