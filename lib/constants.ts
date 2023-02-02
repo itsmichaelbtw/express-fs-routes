@@ -1,22 +1,24 @@
-import type { RouteHandlerOptions, RouteRegistrationOptions } from "./types";
+import type { RouterOptions, RouteRegistrationOptions } from "./types";
 
+export const SLUG_REGEX = /\[(.*?)\]/gi;
 export const EXPRESS_PARAMS_TOKEN = ":";
-export const EXPRESS_BASE_REGEX = /^\/?$/i;
 export const WILD_CARD_TOKEN = "*";
 export const CURRENT_ENVIRONMENT = process.env.NODE_ENV || "development";
+export const OUTPUT_DIRECTORY = ".fs-routes";
 
 export const DEFAULT_OPTIONS: RouteRegistrationOptions = {
     directory: "routes",
     appMount: "",
     indexNames: ["index.js"],
-    paramsToken: "#",
-    output: ".fs-routes",
-    silent: false
+    output: OUTPUT_DIRECTORY,
+    silent: false,
+    environmentRoutes: undefined,
+    redactOutputFilePaths: false
 };
 
-export const DEFAULT_ROUTE_OPTIONS: RouteHandlerOptions = {
-    environments: undefined,
+export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
+    environments: null,
     isIndex: null,
     skip: false,
-    notImplemented: null
+    paramsRegex: null
 };
