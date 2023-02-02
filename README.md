@@ -1,6 +1,8 @@
 # express-fs-routes
 
-An intuitive way of defining and registering your routes for your express app. Avoid the clutter and cumbersome process of importing your routes and manually registering them. Easily create and manage express routes with a simple directory structure. No more hard coding routes into your projects main file. Specify a directory to scan, and all routes will be automatically registered.
+An intuitive way of defining and registering your routes for your Express app. Avoid the clutter and cumbersome process of importing your routes and manually registering them. Easily create and manage Express routes with a simple directory structure. No more hard coding routes into your projects main file. Specify a directory to scan, and all routes will be automatically registered.
+
+**New to Express?** Check out the [Express documentation](https://expressjs.com/en/guide/routing.html) to get started.
 
 ## Table of Contents
 
@@ -13,10 +15,12 @@ An intuitive way of defining and registering your routes for your express app. A
   - [Environment Specific Routes](#environment-specific-routes)
   - [Global Route Prefix](#global-route-prefix)
   - [Parameters](#parameters)
-  - [Router Options](#router-options)
-  - [Extended Url Paths](#extended-url-paths)
-- [Options](#options)
-- [Route Options](#route-options)
+  - [Extended URL Paths](#extended-url-paths)
+  - [Multiple HTTP Methods](#multiple-http-methods)
+- [Engine](#route-engine)
+  - [Engine Options](#engine-options)
+  - [Routing](#routing)
+- [Router Options](#router-options)
 - [Caveats](#caveats)
 - [FAQ](#faq)
 - [TypeScript](#typescript)
@@ -24,12 +28,11 @@ An intuitive way of defining and registering your routes for your express app. A
 
 ## Features
 
-- Supports CommonJS, ES6, and TypeScript projects
+- Supports CommonJS, ES6 (coming soon), and TypeScript projects (coming soon)
 - Existing projects can be easily migrated
 - Built-in route validation
 - Global route prefix
 - Build routes from a directory structure
-- Built-in migration tool (coming soon)
 - Environment specific routes
 - Granular control over route registration behavior
 
@@ -51,9 +54,9 @@ It is recommended to view the [examples](#examples) before continuing.
 
 Existing projects should have little to no effort when migrating to this package. This aims to eliminate as much overheard as possible when creating and managing routes. Middleware can be used as well, and will be registered in the order they are defined in the route file.
 
-It is important to note that the relative path is the url path of a route. This is similiar to how [Next.js](https://nextjs.org/) handles routing. 
+It is important to note that the relative path is the url path of a route. This is similiar to how [Next.js](https://nextjs.org/docs/routing/introduction) handles routing. 
 
-<!-- You may find when migrating an existing project, your routes may not be registered the way you expect. Ensure you are using the built-in migration tool. -->
+There is no limitation on the amount of times you decide to register routes. You can register routes from multiple directories, and even multiple times from the same directory. Using the same instance of the `RouteEngine` class, you can register routes from multiple directories. This is useful if you have a directory for your public routes, and another for your private routes. You can register both directories and have them both be accessible from the same Express app.
 
 Example directory structure:
 
@@ -82,54 +85,57 @@ GET /
 
 Example: `server.ts`
 
-The initial directory you choose to scan will NOT be included in the route path. For example, if you choose to scan the `routes` directory, the route path will be `/users` and not `/routes/users`. If you wish to provide a one-time prefix for all routes, see the [options](#options) section.
+The initial directory you choose to scan will NOT be included in the route path. For example, if you choose to scan the `routes` directory, the route path will be `/users` and not `/routes/users`. If you wish to provide a one-time prefix for all routes, see the [Engine Options](#engine-options) section.
 
 ```typescript
-import express from 'express';
+import express from "express";
 
-import { registerRoutes } from 'express-fs-routes';
+import { RouteEngine } from "express-fs-routes";
 
 const app = express();
+const fsRoutes = new RouteEngine(app, "module") // or "commonjs"
+
+fsRoutes.setOptions({
+  directory: "routes", // or path.join(__dirname, "routes")
+});
 
 // middleware still works as normal
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.disable('x-powered-by');
+app.disable("x-powered-by");
 
 // here you would normally do
-// app.use('/users', usersRouter);
-// app.use('/posts', postsRouter);
-// app.use('/comments', commentsRouter);
+// app.use("/users", usersRouter);
+// app.use("/posts", postsRouter);
+// app.use("/comments", commentsRouter);
 // ...
 
-// but now you can do this
-registerRoutes(app, {
-  directory: 'routes', // or path.join(__dirname, 'routes')
-});
+// but now you can do
+const registry = await fsRoutes.registerRoutes();
 
 // provide a catch all route
 app.use((req, res) => {
-  res.status(404).send('Not Found');
+  res.status(404).send("Not Found");
 });
 
 app.listen(3000, () => {
-  console.log('Server listening on port 3000');
+  console.log("Server listening on port 3000");
 });
 ```
 
 Example: `routes/users/fetch.ts`
 
-Whether you are using CommonJS, ES6, or TypeScript, all are supported and will be registered as expected. It is important when you define the route, that it is exported as default. This is the expected behaviour designed by express. See more information about express routers [here](https://expressjs.com/en/guide/routing.html#express-router).
+Whether you are using CommonJS, ES6, or TypeScript, all are supported and will be registered as expected. It is important when you define the route, that it is exported as default. This is the expected behaviour designed by Express. See more information about Express routers [here](https://expressjs.com/en/guide/routing.html#express-router).
 
-An extra feature that is built into this package is the option to export a custom named object that will be used to control the registration behaviour of the route. See the [route options](#route-options) section for more information.
+An extra feature that is built into this package is the option to export a custom named object that will be used to control the registration behaviour of the route. See the [Router Options](#router-options) section for more information.
 
-It is important to remember that the folder/file structure that you defined will be the base url of the route that is defined within the file at hand. You may be confused to why each file has a path of `/` and that is because the file's relative path is used as the url. You are still free to define additional url paths within the route file. Learn more [here](#extended-url-paths).
+It is important to remember that the folder/file structure that you defined will be the base url of the route that is defined within the file at hand. You may be confused to why each file has a path of `/` and that is because the file"s relative path is used as the url. You are still free to define additional url paths within the route file. These are referred to as **extended url paths** and are explained in more detail [here](#extended-url-paths).
 
 ```typescript
-import express from 'express';
+import express from "express";
 
-import type { RouteHandlerOptions } from 'express-fs-routes';
+import type { RouterOptions } from "express-fs-routes";
 
 const router = express.Router();
 
@@ -140,7 +146,7 @@ router.get("/", async (req, res) => {
 });
 
 export default router;
-export const routeOptions: RouteHandlerOptions = {
+export const routeOptions: RouterOptions = {
   // options here
 };
 ```
@@ -150,53 +156,63 @@ export const routeOptions: RouteHandlerOptions = {
 ### Basic
 
 ```typescript
-import express from 'express';
+import express from "express";
 
-import { registerRoutes } from 'express-fs-routes';
+import { RouteEngine } from "express-fs-routes";
 
 const app = express();
+const fsRoutes = new RouteEngine(app, "module");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-registerRoutes(app);
+await fsRoutes.registerRoutes(app);
 
 app.listen(3000, () => {
-  console.log('Server listening on port 3000');
+  console.log("Server listening on port 3000");
 });
 ```
 
 By default, the directory that is scanned is `routes`. This is the same directory structure that is used in the [quick start](#quick-start) example.
 
+If you are confused on the `module` reference as the 2nd argument to the constructor, have a look at the [Route Engine](#route-engine) section.
+
 ### Custom Directory
 
 ```typescript
-import express from 'express';
-import path from 'path';
+import express from "express";
 
-import { registerRoutes } from 'express-fs-routes';
+import { RouteEngine } from "express-fs-routes";
 
 const app = express();
+const fsRoutes = new RouteEngine(app, "module");
 
-registerRoutes(app, {
-  directory: 'routes'
-});
+fsRoutes.setOptions({
+  directory: "my_custom_path", // or path.join(__dirname, "my_custom_path")
+})
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+await fsRoutes.registerRoutes(app);
 
 app.listen(3000, () => {
-  console.log('Server listening on port 3000');
+  console.log("Server listening on port 3000");
 });
 ```
 
-If you are having trouble supplying a custom directory, ensure you are using the absolute path. You can use the `path` module to help with this. See the [options](#options) section for more information or the [examples](examples).
+If you are having trouble supplying a custom directory, ensure you are using the absolute path. You can use the `path` module to help with this. See the [Engine Options](#engine-options) section for more information or the [examples](examples).
+
+When calling `setOptions`, this can be called at any time before `registerRoutes` is called. This means you can change the directory at any time.
 
 ### Environment Specific Routes
 
 ```typescript
 // routes/users/fetch.ts
 
-import express from 'express';
+import express from "express";
 
-import type { RouteHandlerOptions } from 'express-fs-routes';
+import type { RouterOptions } from "express-fs-routes";
 
 const router = express.Router();
 
@@ -208,12 +224,14 @@ router.get("/", async (req, res) => {
 
 export default router;
 
-export const routeOptions: RouteHandlerOptions = {
-  environments: ['development', 'staging']
+export const routeOptions: RouterOptions = {
+  environments: ["development", "staging"]
 };
 ```
 
-Environments are not standardised, so you can use whatever you want. The default environment is `development`. You can change this by setting the `NODE_ENV` environment variable. As long as the environment matches, the route will be registered.
+Environments are not standardised, so you can use whatever you want. The default environment is `development`. You can change this by setting the `NODE_ENV` environment variable. As long as the environment matches, the route will be registered. If you want to register a route for all environments, either omit this value or supply a wildcard `*`.
+
+In this case, the above route will only be registered in the `development` and `staging` environments. Any other environment will not register the route.
 
 See the [examples](examples) for more information.
 
@@ -224,18 +242,19 @@ Also known as an application mount, you can specify a prefix that will be append
 This saves the hassle of having to create a directory just for the prefix.
 
 ```typescript
-import express from 'express';
+import express from "express";
 
-import { registerRoutes } from 'express-fs-routes';
+import { RouteEngine } from "express-fs-routes";
 
 const app = express();
+const fsRoutes = new RouteEngine(app, "module");
 
-registerRoutes(app, {
-  appMount: '/api'
-});
+fsRoutes.setOptions({
+  appMount: "/api"
+})
 
 app.listen(3000, () => {
-  console.log('Server listening on port 3000');
+  console.log("Server listening on port 3000");
 });
 
 // GET /api/users
@@ -245,14 +264,14 @@ app.listen(3000, () => {
 
 ### Parameters
 
-Dynamic parameters are supported and will be parsed to treat them as such. The `#` symbol is used to denote a parameter. You are free to customize this symbol by using the `paramsToken` option. See the [options](#options) section for more information.
+Dynamic parameters are supported and will be parsed to treat them as such. The **slug** pattern is used to denote a parameter. 
 
 ```typescript
-// routes/users/#user_id/delete.ts
+// routes/users/[user_id]
 
-import express from 'express';
+import express from "express";
 
-import type { RouteHandlerOptions } from 'express-fs-routes';
+import type { RouterOptions } from "express-fs-routes";
 
 const router = express.Router({ mergeParams: true });
 
@@ -265,54 +284,38 @@ router.delete("/", (req, res) => {
 })
 
 export default router;
+
+// DELETE /users/:user_id
 ```
-Ensure you set `{ mergeParams: true }` when using parameters. This is required by express to ensure the parameters are parsed correctly. 
+Ensure you set `{ mergeParams: true }` when using parameters. This is required by express to ensure the parameters are parsed correctly. By default, a parameter will be parsed into `:param` format. 
+
+Additionally, you can provide a regex pattern that will be used to replace the slug. This is useful if you want to use a different pattern for your parameters.
+
+```typescript
+export const routeOptions: RouterOptions = {
+  paramsRegex: {
+    user_id: /user_id_[a-zA-Z0-9]+/ // will match user_id_1234
+  }
+};
+
+// DELETE /users/:user_id(user_id_[a-zA-Z0-9]+)
+```
+
+Parameters can be nested as deep as you need. Just ensure that if you wish to use custom patterns, you provide a 
+pattern for each level. This is not required by default as any missing patterns will be parsed into the default `:param` format.
 
 See the [examples](examples) for more information.
 
-### Router Options
-
-```typescript
-// routes/users/login.ts
-
-import express from 'express';
-
-import type { RouteHandlerOptions } from 'express-fs-routes';
-
-const router = express.Router();
-
-router.post("/", async (req, res) => {
-  const { email, password } = req.body;
-
-  const newUser = await User.create({ email, password });
-
-  res.json(newUser);
-});
-
-export default router;
-
-export const routeOptions: RouteHandlerOptions = {
-  environments: ['production'], // only available in these environments
-  notImplemented: (req, res) => {
-    res.status(503).json({ message: 'Login is currently unavailable' });
-  } 
-};
-```
-
-Important: When the `notImplemented` property is present, this will be used to register the route instead of the default route handler. This is NOT evaluated on each request, ONLY when the routes are first initially registered. If you wish to resume default behaviour, simply remove the `notImplemented` property and restart the server.
-
-See [Route Options](#route-options) for more information.
-
-### Extended Url Paths
+### Extended URL Paths
 
 You may think that you are limited to utilizing the directory structure to define your routes, but you are not. You can define additional url paths within the route file. This will be appended at runtime to the base url path and will work as expected.
 
 ```typescript
 // routes/users/create.ts
 
-import express from 'express';
+import express from "express";
 
-import type { RouteHandlerOptions } from 'express-fs-routes';
+import type { RouterOptions } from "express-fs-routes";
 
 const router = express.Router();
 
@@ -327,120 +330,264 @@ export default router;
 // POST /users/create/admin
 ```
 
-## Options
+### Multiple HTTP Methods
 
-### `directory`
+When defining a route, you can specify multiple HTTP methods on the same router. All routes are handled as expected and will be registered as expected.
 
-The directory to scan for route files. This is relative to the current working directory. The default value is `routes`.
+There is one condition to this, read the [Caveats](#caveats) section for more information.
 
 ```typescript
-registerRoutes(app, {
-  directory: 'routes' // or path.resolve(__dirname, 'routes')
+// routes/users
+
+import express from "express";
+
+const router = express.Router();
+
+router.get("/", async (req, res) => {
+  const users = await User.find();
+
+  res.json(users);
 });
-```
 
-Default: `routes`
+router.post("/", async (req, res) => {
+  const user = await User.create(req.body);
 
-### `appMount`
-
-An optional prefix to append to all registered routes. This is useful if your server sits behind a prefix, such as `/api` for example.
-
-```typescript
-registerRoutes(app, {
-  appMount: '/api'
+  res.json(user);
 });
-```
 
-### `environmentRoutes`
+router.delete("/:user_id", async (req, res) => {
+  const { user_id } = req.params;
 
-Specify and control any routes that are specific to a certain environment. This is resolved relative to the `directory` option. If you instead wish to use the root directory as the environment, you must instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
+  await User.delete(user_id);
 
-See the [examples](examples) for more information.
-
-```typescript
-registerRoutes(app, {
-  environmentRoutes: {
-    development: ['dev'], // only the dev directory will be registered in development
-    production: ['users', 'posts'] // only the users and posts directories will be registered in production
-  }
+  res.json({ message: `User ${user_id} deleted` });
 });
+
+// extended url paths also work
+router.put("/:user_id/avatar", async (req, res) => {
+  const { user_id } = req.params;
+
+  await User.updateAvatar(user_id, req.body);
+
+  res.json({ message: `User ${user_id} avatar updated` });
+});
+
+export default router;
 ```
+## Route Engine
 
-By default all routes are registered in all environments. If you prefer to have granular control over this behaviour, check out [Route Options](#route-options).
+The `RouteEngine` class is the main class that is used to register routes. Start by instantiating the class with the express application and context type. The **context** is used to indicate how the internal engine should require the route files. This can be either `commonjs` or `module`. Each context type also performs its own validation on the route files.
 
-> Note: Only accepts directories, not files.
+Normally, you will most likely only need one instance of the `RouteEngine` class. However, if you wish to have multiple instances, you can do so. This is useful if you wish to have different contexts for different directories. Such as when using TypeScript, one directory may be compiled to `commonjs` and another to `module`.
 
-### `indexNames`
-
-Sometimes you may want to specify routes that act upon the root of a directory, or the index of a directory.
-
-For example, if you have a directory structure like this:
-
-```
-routes/
-  users/
-    index.js
-    retrieve.js
-```
-
-You can specify that the `index.js` file should be used to handle the root of the `users` directory. Now you will have an accessible route at `/users` and `/users/retrieve`. Any file names will work, it doesn't have to be `index.js`.
-
-Default: `['index.js']`.
-
-> Note: Only accepts files, not directories.
-
-### `paramsToken`
-
-Express paramaters are supported by default. This allows you to specify a folder or file that will consume a dynamic parameter. You can specify a custom token to use.
-
-Example:
-
-```
-routes/
-  users/
-    #user_id/
-      retrieve.js
-```
-
-Is then parsed into `/users/:user_id/retrieve` and will be accessible on `req.params.user_id`.
-
-Default: `#`
-### `output`
-
-Specify a directory that you wish to save a JSON output of the directory tree and route registry to. This is used to visualise and introspect the routes that have been registered.
-
-Default: `.fs-routes`
-
-### `redactOutputFilePaths`
-
-Redact the file paths in the output JSON file. This is useful if you wish to share the output file with others, but do not want to expose the file paths on your machine. You will instead see `...`
-
-Default: `false`
-
-### `silent`
-
-Whether to suppress any errors that may occur. If set to `true`, errors will be logged to the console. If set to `false`, errors will be thrown.
-
-Default: `false`
-
-## Route Options
-
-A built-in feature this package provides is the ability to export a custom named object that will be used to control the registration behaviour of the route. This behaviour is only evaluated when registering the route. The object is not used by express in any way.
+When a class is instantiated, it is best to then call `setOptions` to set the options for the engine. This is required before calling `registerRoutes`. All options are optional except for the `directory` option. When setting the options, it will override any previously set options.
 
 ```typescript
-type NotImplementedCallback = (req: Request, res: Response, next: NextFunction) => void;
+import express from "express";
 
-export interface RouteHandlerOptions {
-    environments?: string | string[];
-    isIndex?: boolean;
-    notImplemented?: NotImplementedCallback;
-    skip?: boolean;
+import { RouteEngine } from "express-fs-routes";
+
+const app = express();
+const fsRoutes = new RouteEngine(app, "module"); // or "commonjs"
+
+fsRoutes.setOptions({
+  directory: "routes",
+  appMount: "/api"
+});
+
+// or
+
+fsRoutes.setOptions(Object.assign({}, fsRoutes.options, {
+  directory: "routes",
+  appMount: "/api"
+})); // this will merge the options instead of overriding them
+
+const registry = await fsRoutes.registerRoutes();
+```
+
+After calling `registerRoutes`, the engine will return a `RouteRegistry` object. This object contains all the registered routes and their corresponding metadata. This is useful if you wish to perform any additional actions on the routes.
+
+### Engine Options
+```typescript
+export interface RouteRegistrationOptions {
+    /**
+     * The root directory that contains all routes you wish to register.
+     * You may pass a relative path, or an absolute path. If you pass a relative path,
+     * it will be resolved relative to `process.cwd()`.
+     *
+     * Defaults to `routes`.
+     */
+    directory: FilePath;
+    /**
+     * An optional app mount that is appended to the start of each route.
+     *
+     * For example, if you are building an application that will be hosted at
+     * `https://example.com/api`, you would set this to `/api` to indicate that
+     * all routes should be mounted at `/api`.
+     *
+     * This is designed to eliminate the need to specify a directory for app mounts.
+     *
+     * Defaults to an empty string.
+     */
+    appMount?: string | null;
+    /**
+     * Define any routes that are specific to a certain environment. This
+     * is resolved relative to the `directory` option.
+     *
+     * ```
+     * {
+     *   environmentRoutes: {
+     *     development: ["users", "posts"],
+     *     production: ["users"],
+     *     test: ["users", "posts", "comments"],
+     *     staging: ["users", "posts"],
+     *     custom_env: ["foo", "bar"]
+     *   }
+     * }
+     * ```
+     *
+     * If you instead wish to use the root directory as the environment, you must
+     * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
+     *
+     * Note: Only accepts directories.
+     */
+    environmentRoutes?: EnvironmentRoutes;
+    /**
+     * Sometimes you may want to specify routes that act upon the root
+     * of a directory.
+     *
+     * For example, if you have a directory structure like this:
+     *
+     * ```
+     * routes/
+     *  users/
+     *    index.js
+     *    retrieve.js
+     * ```
+     *
+     * You can tell the route engine to treat `index.js` as the root of the
+     * `users` directory.
+     *
+     * Note: Only accepts filenames.
+     *
+     * Defaults to `[ "index.js" ]`.
+     */
+    indexNames?: string[];
+    /**
+     * Specify a directory to save a JSON file that contains a tree of all
+     * registered routes, and a registry of all route handlers. This is useful
+     * for debugging purposes.
+     *
+     * Set this to `false` to disable this feature.
+     *
+     * Defaults to `.fs-routes`.
+     */
+    output?: string | false | null;
+    /**
+     * Choose if you wish to redact the file output paths for security reasons.
+     */
+    redactOutputFilePaths?: boolean;
+    /**
+     * Whether errors should be thrown. If this is set to `true`, operations will
+     * continue as normal and log any errors to the console. Otherwise, errors
+     * will be thrown and the operation will stop.
+     *
+     * Defaults to `false`.
+     */
+    silent?: boolean;
 }
 ```
+### Routing
 
-> Note: When changing route options, you must restart the server for the changes to take effect.
+Routing works similiar to how [Next.js](https://nextjs.org/docs/routing/introduction) handles routing. Each file in the `directory` is treated as a route. The file name is used as the route path. For example, if you have a file called `users.ts` in the `directory`, it will be registered as `/users`. 
 
-### `environments`
+Dynamic routes are also supported and this is denoted using square brackets. For example, if you have a file called `[id].ts` in the `directory`, it will be registered as `/:id` and the `id` parameter will be available in the `req.params` object.
+
+Only TypeScript and JavaScript files are supported. Everything else will be ignored.
+
+## Router Options
+
+Each file can have a `routeOptions` export. This is an optional export that allows you to specify additional options for the route. As of version **2.0.0**, all options are purely for registration purposes. There are plans to include support for dynamic route options in the future.
+
+```typescript
+// routes/users/login.ts
+
+import express from "express";
+
+import type { RouterOptions } from "express-fs-routes";
+
+const router = express.Router();
+
+router.post("/", async (req, res) => {
+  const { email, password } = req.body;
+
+  const newUser = await User.create({ email, password });
+
+  res.json(newUser);
+});
+
+export default router;
+export const routeOptions: RouterOptions = {
+  environments: ["production"], // only available in these environments
+};
+```
+
+<details>
+<summary>See RouterOptions interface</summary>
+
+```typescript
+export interface RouterOptions {
+  /**
+   * Specify certain environments you want this route to be registered in. If
+   * you wish to register a route in all environments, you can omit this property
+   * or provide a wild card token `*`.
+   *
+   * This value takes precedence over `environmentRoutes` when both are present.
+   *
+   * Defaults to `null`.
+   */
+  environments?: string | string[];
+  /**
+   * Whether this route should be treated as an index route. This route
+   * will be instead mounted at the parent directory.
+   *
+   * This value takes precedence over `indexNames`.
+   *
+   * If you have defined a path that is
+   */
+  isIndex?: boolean;
+  /**
+   * Control whether the route should be registered. The route will still be scanned and under go
+   * all the same checks, but will bypass express registration.
+   *
+   * Defaults to `true`.
+   */
+  skip?: boolean;
+  /**
+   * Specify a custom parameter regex that will be used when
+   * registering the route to the express app.
+   *
+   * It supports nested parameters, and will be used to replace
+   * the default regex.
+   *
+   * ```ts
+   * export const routeOptions: RouterOptions = {
+   *  paramsRegex: {
+   *    post_id: /post_id_[a-z]+/,
+   *    user_id: /user_id_[a-z]+/
+   *  }
+   * }
+   * ```
+   *
+   * Accepts either a string or a RegExp. If a RegExp is provided,
+   * it will be converted to a string using `.source`.
+   */
+  paramsRegex?: ParamsRegex;
+}
+```
+</details>
+
+#### `environments`
 
 Controls which environments this route should be registered in. This is not standardised, so you can specify any environment you want. As long as `NODE_ENV` is set to one of the values, the route will be registered.
 
@@ -454,62 +601,62 @@ Rules this property follows:
 
 Default: `undefined`
 
-### `isIndex`
+#### `isIndex`
 
-Whether this route should be treated as an index route. This route will be instead mounted at the parent directory, or will 'navigate up' a directory.
+Whether this route should be treated as an index route. This route will be instead mounted at the parent directory, or will "navigate up" a directory.
 
 This value takes precedence over `indexNames`.
 
 Default: `false`
 
-### `notImplemented`
-
-Sometimes you may require the route to still be publicly accessible, but don't want to perform it's default behaviour. You can provide custom logic to handle the request instead.
-
-Example: You may want to temporarily disable a login/register route, but still want to return a 200 response. The choice is yours.
-
-If this value is provided, this will be registered as the route handler instead of the default export.
-
-Default: `undefined`
-
-### `skip`
+#### `skip`
 
 Whether to skip this route entirely.
 
 Default: `false`
 
+#### `paramsRegex`
+
+Specify a custom regex pattern to use when a known parameter is found. This is useful if you want to use a different regex pattern for a specific parameter.
+
+```typescript
+// routes/users/[id].ts
+
+export const routeOptions: RouterOptions = {
+  paramsRegex: {
+    id: /user_[a-z]+/
+  }
+};
+```
 See the [examples](examples) for more information.
 
 ## Caveats
 
-Currently, when exporting the `routeOptions` object, if your file contains multiple routes, all routes will be affected by the options. This is a limitation of the current implementation and will be addressed in a future release.
+Currently, when exporting the `routeOptions` object, if your file contains multiple http methods, all routes will be affected by the options. This is a limitation of the current implementation and will be addressed in a future release.
 
 ```typescript
-import express from 'express';
+import express from "express";
 
-import type { RouteHandlerOptions } from 'express-fs-routes';
+import type { RouterOptions } from "express-fs-routes";
 
 const router = express.Router();
 
 router.get("/foo", (req, res) => {
-  res.json({ message: 'foo' });
+  res.json({ message: "foo" });
 });
 
 router.get("/bar", (req, res) => {
-  res.json({ message: 'bar' });
+  res.json({ message: "bar" });
 });
 
 export default router
 
-export const routeOptions: RouteHandlerOptions = {
-  environments: ['production'],
-  notImplemented: (req, res) => {
-    res.status(503).json({ message: 'This route is currently unavailable' });
-  }
+export const routeOptions: RouterOptions = {
+  environments: ["production"],
+  skip: true
 };
 
 // all routes, both GET /foo and GET /bar will be affected by the options
-
 ```
 
 ## FAQ
