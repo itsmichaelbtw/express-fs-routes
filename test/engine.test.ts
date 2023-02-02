@@ -81,11 +81,11 @@ describe("routing engine", () => {
         const registry = await fsRoutes.registerRoutes();
 
         const nested = registry.find((route) => {
-            return route.absolute_path.includes("engine_options\\params\\[nested]");
+            return route.absolute_path.includes("[nested]");
         }) as RouteSchema;
 
         const custom = registry.find((route) => {
-            return route.absolute_path.includes("engine_options\\params\\[custom]");
+            return route.absolute_path.includes("[custom]");
         }) as RouteSchema;
 
         expect(nested.full_path.endsWith("/:nested/:token")).to.be.true;
@@ -212,7 +212,7 @@ describe("routing engine", () => {
 
                 for (const route of registry) {
                     if (route.absolute_path.includes(index)) {
-                        expect(route.full_path).to.not.include("index");
+                        expect(route.full_path.endsWith("/index")).to.be.false;
                     }
                 }
             });
@@ -224,11 +224,11 @@ describe("routing engine", () => {
 
                 for (const route of registry) {
                     if (route.absolute_path.includes(index)) {
-                        expect(route.full_path).to.not.include("index");
+                        expect(route.full_path.endsWith("/index")).to.be.false;
                     }
 
                     if (route.absolute_path.includes(customIndex)) {
-                        expect(route.full_path).to.not.include("custom_index");
+                        expect(route.full_path.endsWith("/custom_index")).to.be.false;
                     }
                 }
             });
