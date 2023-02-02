@@ -1,0 +1,224 @@
+[
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "",
+    "extended_path": null,
+    "full_path": "/",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/ping",
+    "extended_path": null,
+    "full_path": "/ping",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/posts",
+    "extended_path": null,
+    "full_path": "/posts",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "post",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/posts",
+    "extended_path": null,
+    "full_path": "/posts",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/posts/search",
+    "extended_path": null,
+    "full_path": "/posts/search",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/users",
+    "extended_path": null,
+    "full_path": "/users",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "post",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/users",
+    "extended_path": null,
+    "full_path": "/users",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": null
+    },
+    "status": "registered",
+    "base_path": "/users/search",
+    "extended_path": null,
+    "full_path": "/users/search",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": null,
+    "full_path": "/users/:id(user_[a-z0-9]{9})",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": "/avatar",
+    "full_path": "/users/:id(user_[a-z0-9]{9})/avatar",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "put",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": "/avatar",
+    "full_path": "/users/:id(user_[a-z0-9]{9})/avatar",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": "/permissions",
+    "full_path": "/users/:id(user_[a-z0-9]{9})/permissions",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "put",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": "/permissions",
+    "full_path": "/users/:id(user_[a-z0-9]{9})/permissions",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "delete",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[a-z0-9]{9}"
+      }
+    },
+    "status": "registered",
+    "base_path": "/users/:id(user_[a-z0-9]{9})",
+    "extended_path": null,
+    "full_path": "/users/:id(user_[a-z0-9]{9})",
+    "message": "Route was registered successfully for development"
+  }
+]
