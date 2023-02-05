@@ -92,6 +92,20 @@ describe("routing engine", () => {
         expect(custom.full_path.endsWith("/:custom")).to.be.true;
     });
 
+    it("should throw an error if no app is passed", () => {
+        expect(() => {
+            // @ts-ignore
+            new RouteEngine(null, "commonjs");
+        }).to.throw("No app was passed to the route engine.");
+    });
+
+    it("should throw an error if an incorrect context is passed", () => {
+        expect(() => {
+            // @ts-ignore
+            new RouteEngine(app, "invalid");
+        }).to.throw("The engine expected a valid context. Must be either 'commonjs' or 'module'.");
+    });
+
     describe("engine options", () => {
         describe("directory", () => {
             it("should accept relative paths", async () => {

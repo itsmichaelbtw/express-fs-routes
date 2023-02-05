@@ -111,6 +111,16 @@ class Engine {
     protected $resolveDirectory: string;
 
     constructor(app: ExpressApp, context: RouteRegistrationContext) {
+        if (!app) {
+            throw new Error("No app was passed to the route engine.");
+        }
+
+        if (context !== "commonjs" && context !== "module") {
+            throw new Error(
+                "The engine expected a valid context. Must be either 'commonjs' or 'module'."
+            );
+        }
+
         this.$app = app;
         this.$context = context;
         this.$routeRegistry = [];
