@@ -15,20 +15,17 @@
   "files": [
     "dist",
     "lib",
-    "examples",
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
     "package.json",
-    "tsconfig.json",
-    "nodemon.json"
+    "tsconfig.json"
   ],
   "scripts": {
     "start": "nodemon --exec \"npm run server\"",
     "test": "ts-mocha -p tsconfig.mocha.json --recursive test/**/*.test.ts",
     "build": "rimraf dist && tsc -p tsconfig.dec.json && rollup -c -m rollup.config.js --bundleConfigAsCjs && ts-node scripts/package-json.ts",
     "ts": "ts-node",
-    "server": "npm run ts -- ./examples/server.ts",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "release:patch": "npm run release -- --release-as patch",

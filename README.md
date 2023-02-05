@@ -28,10 +28,9 @@ An intuitive way of defining and registering your routes for your Express app. A
 
 ## Features
 
-- Supports CommonJS, ES6 (coming soon), and TypeScript projects (coming soon)
+- Supports CommonJS, ESM, and TypeScript projects
 - Existing projects can be easily migrated
-- Built-in route validation
-- Global route prefix
+- Prefix routes with a global app mount
 - Build routes from a directory structure
 - Environment specific routes
 - Granular control over route registration behavior

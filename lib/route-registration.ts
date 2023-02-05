@@ -249,12 +249,27 @@ class Engine {
 
         let handler: any | null = null;
 
-        if (this.$context === "commonjs") {
-            handler = require(path);
-        } else if (this.$context === "module") {
-            handler = await import(path);
+        try {
+            if (this.$context === "module") {
+                handler = await import(ensureLeadingToken(path, "file://"));
+
+                if (typeof handler.default !== "function") {
+                    handleNonFunction();
+                    return null;
+                }
+
+                const routeOptions = handler.routeOptions;
+
+                handler = handler.default;
+                handler.routeOptions = routeOptions;
+            } else if (this.$context === "commonjs") {
+                handler = require(path);
+            }
+        } catch (error) {
+            debugOrThrowError(error, "red");
         }
 
+        // only for typescript compatibility
         if (handler && handler.__esModule) {
             if (typeof handler.default !== "function") {
                 handleNonFunction();
@@ -473,10 +488,10 @@ class Engine {
         let proceed = null;
 
         for (const nodeEnv in this.options.environmentRoutes) {
-            const environments = this.options.environmentRoutes[nodeEnv];
+            const directories = this.options.environmentRoutes[nodeEnv];
 
-            if (isArray(environments)) {
-                for (const filePath of environments) {
+            if (isArray(directories)) {
+                for (const filePath of directories) {
                     const resolved = this.resolveFilePath(filePath);
 
                     if (routeSchema.absolute_path.startsWith(resolved)) {
