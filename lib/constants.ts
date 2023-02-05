@@ -20,5 +20,5 @@ export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
     environments: null,
     isIndex: null,
     skip: false,
-    paramsRegex: null
+    paramsRegex: {}
 };

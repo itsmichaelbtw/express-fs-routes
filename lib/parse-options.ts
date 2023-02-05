@@ -50,7 +50,7 @@ export function parseRouterHandlerOptions(options: RouterOptions): RouterOptions
         }
     }
 
-    if (!isEmpty(options.paramsRegex)) {
+    if (!isEmpty(options.paramsRegex) && isObject(options.paramsRegex)) {
         for (const pathName in options.paramsRegex) {
             const pathRegex = options.paramsRegex[pathName];
 
