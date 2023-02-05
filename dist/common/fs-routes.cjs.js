@@ -57,8 +57,16 @@ const FILE_FILTER = /^([^\.].*)(?<!\.d)\.(js|ts)$/;
 function readDirectorySync(dirPath) {
   return fs.readdirSync(dirPath);
 }
-function statsSync(filePath) {
-  return fs.statSync(filePath);
+async function stats(filePath) {
+  return new Promise((resolve, reject) => {
+    fs.stat(filePath, (err, stats) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(stats);
+      }
+    });
+  });
 }
 function newComponentEntry(relativePath, component) {
   const entry = {
@@ -88,7 +96,7 @@ async function createDirectoryTree(dir, onFile) {
   const componentEntry = newComponentEntry(resolvedPath, "directory");
   const directoryTree = await asyncReduce(directory, async (tree, file) => {
     const filePath = path.join(resolvedPath, file);
-    const fileStats = statsSync(filePath);
+    const fileStats = await stats(filePath);
     if (fileStats.isDirectory()) {
       const child = await createDirectoryTree(filePath, onFile);
       if (child) {
@@ -210,7 +218,7 @@ const DEFAULT_ROUTE_OPTIONS = {
   environments: null,
   isIndex: null,
   skip: false,
-  paramsRegex: null
+  paramsRegex: {}
 };
 
 function parseRouteRegistrationOptions(options) {
@@ -247,7 +255,7 @@ function parseRouterHandlerOptions(options) {
       opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
     }
   }
-  if (!isEmpty(options.paramsRegex)) {
+  if (!isEmpty(options.paramsRegex) && isObject(options.paramsRegex)) {
     for (const pathName in options.paramsRegex) {
       const pathRegex = options.paramsRegex[pathName];
       if (isString(pathRegex)) {
@@ -307,16 +315,28 @@ function getRouteOptions(handler) {
 //     return handler;
 // }
 
-function debugOrThrowError(message, color) {
+function debugOrThrowError(error, color) {
   if (debugOrThrowError.silent) {
-    return debug(message, color);
+    if (error instanceof Error) {
+      error = error.message;
+    }
+    return debug(error, color);
   } else {
-    throw new Error(message);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(error);
   }
 }
 debugOrThrowError.silent = DEFAULT_OPTIONS.silent;
 class Engine {
   constructor(app, context) {
+    if (!app) {
+      throw new Error("No app was passed to the route engine.");
+    }
+    if (context !== "commonjs" && context !== "module") {
+      throw new Error("The engine expected a valid context. Must be either 'commonjs' or 'module'.");
+    }
     this.$app = app;
     this.$context = context;
     this.$routeRegistry = [];
@@ -412,7 +432,7 @@ class Engine {
         return schema;
       });
       this.appendToRegistry(schema);
-      debugOrThrowError(error.message, "red");
+      debugOrThrowError(error, "red");
     }
   }
 
@@ -430,11 +450,24 @@ class Engine {
       debugOrThrowError(`The default export of a route must be a function. Found at: ${path}`, "red");
     }
     let handler = null;
-    if (this.$context === "commonjs") {
-      handler = require(path);
-    } else if (this.$context === "module") {
-      handler = await import(path);
+    try {
+      if (this.$context === "module") {
+        handler = await import(ensureLeadingToken(path, "file://"));
+        if (typeof handler.default !== "function") {
+          handleNonFunction();
+          return null;
+        }
+        const routeOptions = handler.routeOptions;
+        handler = handler.default;
+        handler.routeOptions = routeOptions;
+      } else if (this.$context === "commonjs") {
+        handler = require(path);
+      }
+    } catch (error) {
+      debugOrThrowError(error, "red");
     }
+
+    // only for typescript compatibility
     if (handler && handler.__esModule) {
       if (typeof handler.default !== "function") {
         handleNonFunction();
@@ -599,9 +632,9 @@ class Engine {
     }
     let proceed = null;
     for (const nodeEnv in this.options.environmentRoutes) {
-      const environments = this.options.environmentRoutes[nodeEnv];
-      if (isArray(environments)) {
-        for (const filePath of environments) {
+      const directories = this.options.environmentRoutes[nodeEnv];
+      if (isArray(directories)) {
+        for (const filePath of directories) {
           const resolved = this.resolveFilePath(filePath);
           if (routeSchema.absolute_path.startsWith(resolved)) {
             if (proceed === false || proceed === null) {
@@ -711,7 +744,7 @@ class RouteEngine extends Engine {
       }
       return Promise.resolve(this.registry);
     } catch (error) {
-      debugOrThrowError(error.message, "red");
+      debugOrThrowError(error, "red");
     }
   }
 

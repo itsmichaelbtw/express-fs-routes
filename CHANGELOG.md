@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.0.0...v2.1.0) (2023-02-05)
+
+
+### Fixed
+
+* file stats lookup is now asynchronous to not cause thread blocks ([a78b520](https://github.com/itsmichaelbtw/express-fs-routes/commit/a78b520999da8d7cb74bf8a7e483d66ae5652f39))
+* importing a module threw an error when `routeOptions` is not defined ([c8b8474](https://github.com/itsmichaelbtw/express-fs-routes/commit/c8b8474ca91da20f39ff436a20bcf4c270b7f139))
+* internal errors not logging with error call stack ([1cce961](https://github.com/itsmichaelbtw/express-fs-routes/commit/1cce9618a0fb83f265f04d779f7db7ff67c2f2f3))
+* missing constructor values now throw proper errors ([62c7f0c](https://github.com/itsmichaelbtw/express-fs-routes/commit/62c7f0c1ab850df964cf3849665a315adb1e728f))
+
+
+### What's New
+
+* added support for typescript and esm projects ([748866b](https://github.com/itsmichaelbtw/express-fs-routes/commit/748866b58758417cdb8a724f188abee14c23e07d))
+
 ## [2.0.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v1.0.1...v2.0.0) (2023-02-02)
 
 
