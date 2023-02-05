@@ -84,11 +84,19 @@ function getRouteOptions(handler: RouteHandler): RouterOptions {
 //     return handler;
 // }
 
-function debugOrThrowError(message: string, color: DebugColors): void {
+function debugOrThrowError(error: Error | string, color: DebugColors): void {
     if (debugOrThrowError.silent) {
-        return debug(message, color);
+        if (error instanceof Error) {
+            error = error.message;
+        }
+
+        return debug(error, color);
     } else {
-        throw new Error(message);
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error(error);
     }
 }
 
@@ -208,7 +216,7 @@ class Engine {
             });
 
             this.appendToRegistry(schema);
-            debugOrThrowError(error.message, "red");
+            debugOrThrowError(error, "red");
         }
     }
 
@@ -584,7 +592,7 @@ export class RouteEngine extends Engine {
 
             return Promise.resolve(this.registry);
         } catch (error) {
-            debugOrThrowError(error.message, "red");
+            debugOrThrowError(error, "red");
         }
     }
 
