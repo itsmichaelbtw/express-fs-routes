@@ -17,8 +17,16 @@ function readDirectorySync(dirPath: FilePath) {
     return fs.readdirSync(dirPath);
 }
 
-function statsSync(filePath: FilePath) {
-    return fs.statSync(filePath);
+async function stats(filePath: FilePath): Promise<fs.Stats> {
+    return new Promise((resolve, reject) => {
+        fs.stat(filePath, (err, stats) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(stats);
+            }
+        });
+    });
 }
 
 function newComponentEntry(relativePath: FilePath, component: TreeComponentType): DirectoryTree {
@@ -59,7 +67,7 @@ export async function createDirectoryTree(
         directory,
         async (tree, file) => {
             const filePath = path.join(resolvedPath, file);
-            const fileStats = statsSync(filePath);
+            const fileStats = await stats(filePath);
 
             if (fileStats.isDirectory()) {
                 const child = await createDirectoryTree(filePath, onFile);
