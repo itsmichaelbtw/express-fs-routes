@@ -283,36 +283,6 @@ function getRouteOptions(handler) {
   }
   return DEFAULT_ROUTE_OPTIONS;
 }
-
-// function transformHandler(handler: any, path: FilePath): RouteHandler | null {
-//     const errorMessage = `The default export of a route must be a function. Found at: ${path}`;
-//     function handleNonFunction(): void {
-//         debugOrThrowError(errorMessage, "red");
-//     }
-
-//     // convert an es6 module to a commonjs module if necessary
-//     // this way all modules are treated the same
-//     if (handler && handler.__esModule) {
-//         if (typeof handler.default !== "function") {
-//             handleNonFunction();
-//             return null;
-//         }
-
-//         handler.default.routeOptions = handler.routeOptions;
-//         handler = handler.default;
-//     }
-
-//     // by default, the default export of a route should be a function
-//     // if this is not the case, throw an error
-//     if (typeof handler !== "function") {
-//         handleNonFunction();
-//         return null;
-//     }
-
-//     handler.routeOptions = getRouteOptions(handler);
-//     return handler;
-// }
-
 function debugOrThrowError(error, color) {
   if (debugOrThrowError.silent) {
     if (error instanceof Error) {

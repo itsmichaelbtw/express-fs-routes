@@ -12,7 +12,8 @@ export interface ParamsRegex {
 export type FilePath = string;
 /**
  * The component type of a given node within
- * the directory tree.
+ * the directory tree. Only used for internal
+ * purposes. This is the value of `route_tree[type]`.
  */
 export type TreeComponentType = "file" | "directory";
 /**
@@ -110,6 +111,13 @@ export interface RouteHandler extends IRouter {
 /**
  * User defined options that can be exported from a route file.
  * This is used to control the registration behavior of a given route.
+ *
+ * @example
+ * ```ts
+ * export const routeOptions: RouterOptions = {
+ *  ...
+ * }
+ * ```
  */
 export interface RouterOptions {
     /**

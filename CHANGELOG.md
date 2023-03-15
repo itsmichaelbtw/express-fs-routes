@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.1.0...v2.1.1) (2023-03-15)
+
+
+### What's New
+
+* updated internal documentation ([d8b01a8](https://github.com/itsmichaelbtw/express-fs-routes/commit/d8b01a857d18e2107adb4d933e71b3967ab82060))
+
 ## [2.1.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.0.0...v2.1.0) (2023-02-05)
 
 
