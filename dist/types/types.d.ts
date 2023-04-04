@@ -1,4 +1,4 @@
-import type { IRouter } from "express";
+import type { IRouter, Request, Response, NextFunction } from "express";
 type Methods = "checkout" | "copy" | "delete" | "get" | "head" | "lock" | "merge" | "mkactivity" | "mkcol" | "move" | "m-search" | "notify" | "options" | "patch" | "post" | "purge" | "put" | "report" | "search" | "subscribe" | "trace" | "unlock" | "unsubscribe";
 interface EnvironmentRoutes {
     [key: string]: FilePath[];
@@ -6,6 +6,10 @@ interface EnvironmentRoutes {
 export interface ParamsRegex {
     [key: string]: RegExp | string;
 }
+/**
+ * An express middleware function that is used to handle a given route.
+ */
+export type RouteHandlerMiddleware = (req: Request, res: Response, next: NextFunction) => void;
 /**
  * The file path to a given route file.
  */
@@ -166,6 +170,17 @@ export interface RouterOptions {
      * it will be converted to a string using `.source`.
      */
     paramsRegex?: ParamsRegex;
+    /**
+     * Metadata that is passed to the route and is available
+     * in the `req` object as `req.routeMetadata`.
+     *
+     * This is useful for passing data to middleware that is
+     * specific to a given route where you want to have request
+     * based context or conditional logic.
+     *
+     * By default, all metadata is defaulted to `{}`.
+     */
+    metadata?: Record<string, any>;
 }
 /**
  * The options that are passed to the `registerRoutes` function.
@@ -255,5 +270,17 @@ export interface RouteRegistrationOptions {
      * Defaults to `false`.
      */
     silent?: boolean;
+    /**
+     * A function that is called before a route undergoes registration. This
+     * is called before environment based checks are performed, and before the route
+     * is conditionally checked for registration. Any changes made to the route
+     * object will be reflected in the registration process and the file output.
+     *
+     * **This is not middleware**. This will only be called once per route and won't
+     * be called for each request.
+     *
+     * @param route
+     */
+    beforeRegistration?(route: RouteSchema): RouteSchema;
 }
 export {};

@@ -100,6 +100,15 @@ declare class Engine {
      */
     protected environmentBaseRegistration(routeSchema: RouteSchema, callback: (proceed: boolean) => void): void;
     /**
+     * Uses the given route handler middleware. Undergoes
+     * a registration hook to allow for any modifications to the
+     * route schema and handler.
+     *
+     * @param route The route schema.
+     * @param handler The route handler.
+     */
+    protected useRouteHandlerMiddleware(route: RouteSchema, handler: RouteHandler): void;
+    /**
      * Binds the available routes to the Express application
      * and performs environment based checking.
      *

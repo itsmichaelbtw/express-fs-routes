@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.1.1...v2.2.0) (2023-04-04)
+
+
+### Fixed
+
+* express examples not starting up ([4f20108](https://github.com/itsmichaelbtw/express-fs-routes/commit/4f20108b52e699587db32549e034ab18d9899da6))
+* reworked examples ([48ad904](https://github.com/itsmichaelbtw/express-fs-routes/commit/48ad90480b96e7f89eac8c7fcc9544dbcd6ade88))
+
+
+### What's New
+
+* added routeMetadata to express request object ([7823ca1](https://github.com/itsmichaelbtw/express-fs-routes/commit/7823ca1a97bfc738ad590f3903ae925d4411c605))
+* added support for metadata and beforeRegistration hook ([c581e7f](https://github.com/itsmichaelbtw/express-fs-routes/commit/c581e7f6575df626df49e55ab79993ce035ceb70))
+
 ### [2.1.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.1.0...v2.1.1) (2023-03-15)
 
 

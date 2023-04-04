@@ -210,13 +210,15 @@ const DEFAULT_OPTIONS = {
   output: OUTPUT_DIRECTORY,
   silent: false,
   environmentRoutes: undefined,
-  redactOutputFilePaths: false
+  redactOutputFilePaths: false,
+  beforeRegistration: route => route
 };
 const DEFAULT_ROUTE_OPTIONS = {
   environments: null,
   isIndex: null,
   skip: false,
-  paramsRegex: {}
+  paramsRegex: {},
+  metadata: {}
 };
 
 function parseRouteRegistrationOptions(options) {
@@ -238,6 +240,9 @@ function parseRouteRegistrationOptions(options) {
   }
   if (!isString(opts.output) && opts.output !== false && opts.output !== null) {
     opts.output = DEFAULT_OPTIONS.output;
+  }
+  if (!isFunction(opts.beforeRegistration)) {
+    opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
   }
   return opts;
 }
@@ -267,6 +272,9 @@ function parseRouterHandlerOptions(options) {
     }
   } else {
     opts.paramsRegex = {};
+  }
+  if (!isObject(options.metadata)) {
+    opts.metadata = {};
   }
   return opts;
 }
@@ -484,7 +492,7 @@ class Engine {
       const method = route.stack[0].method;
       const merged = {
         ...baseSchema,
-        method: method,
+        method: method.toLowerCase(),
         route_options: handler.routeOptions
       };
       const schemaURL = this.createRouteURL(fileEntry.absolute_path, merged.route_options, url => {
@@ -620,6 +628,22 @@ class Engine {
   }
 
   /**
+   * Uses the given route handler middleware. Undergoes
+   * a registration hook to allow for any modifications to the
+   * route schema and handler.
+   *
+   * @param route The route schema.
+   * @param handler The route handler.
+   */
+  useRouteHandlerMiddleware(route, handler) {
+    const useMiddleware = (req, res, next) => {
+      req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+      return handler.call(this.$app, req, res, next);
+    };
+    this.$app.use.call(this.$app, route.full_path, useMiddleware);
+  }
+
+  /**
    * Binds the available routes to the Express application
    * and performs environment based checking.
    *
@@ -627,7 +651,16 @@ class Engine {
    * @param handler The route handler to bind.
    */
   bindRoutes(routes, handler) {
-    for (const route of routes) {
+    for (let [index, route] of routes.entries()) {
+      const hookRoute = this.$options.beforeRegistration(route);
+      if (!isObject(hookRoute)) {
+        route.error = "The `beforeRegistration` hook returned an invalid value.";
+        route.status = "error";
+        debugOrThrowError(route.error, "red");
+        continue;
+      } else {
+        route = hookRoute;
+      }
       const routeOptions = route.route_options;
       if (routeOptions.skip) {
         route.status = "skipped";
@@ -637,12 +670,15 @@ class Engine {
       this.environmentBaseRegistration(route, proceed => {
         const environment = getCurrentWorkingEnvironment();
         if (proceed) {
-          this.$app.use.call(this.$app, route.base_path, handler);
+          this.useRouteHandlerMiddleware(route, handler);
           route.status = "registered";
           route.message = `Route was registered successfully for ${environment}`;
         } else {
           route.status = "skipped";
           route.message = `Route was skipped for ${environment}`;
+        }
+        if (route) {
+          routes[index] = route;
         }
       });
     }
