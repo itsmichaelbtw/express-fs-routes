@@ -409,91 +409,109 @@ After calling `registerRoutes`, the engine will return a `RouteRegistry` object.
 ### Engine Options
 ```typescript
 export interface RouteRegistrationOptions {
-    /**
-     * The root directory that contains all routes you wish to register.
-     * You may pass a relative path, or an absolute path. If you pass a relative path,
-     * it will be resolved relative to `process.cwd()`.
-     *
-     * Defaults to `routes`.
-     */
-    directory: FilePath;
-    /**
-     * An optional app mount that is appended to the start of each route.
-     *
-     * For example, if you are building an application that will be hosted at
-     * `https://example.com/api`, you would set this to `/api` to indicate that
-     * all routes should be mounted at `/api`.
-     *
-     * This is designed to eliminate the need to specify a directory for app mounts.
-     *
-     * Defaults to an empty string.
-     */
-    appMount?: string | null;
-    /**
-     * Define any routes that are specific to a certain environment. This
-     * is resolved relative to the `directory` option.
-     *
-     * ```
-     * {
-     *   environmentRoutes: {
-     *     development: ["users", "posts"],
-     *     production: ["users"],
-     *     test: ["users", "posts", "comments"],
-     *     staging: ["users", "posts"],
-     *     custom_env: ["foo", "bar"]
-     *   }
-     * }
-     * ```
-     *
-     * If you instead wish to use the root directory as the environment, you must
-     * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
-     *
-     * Note: Only accepts directories.
-     */
-    environmentRoutes?: EnvironmentRoutes;
-    /**
-     * Sometimes you may want to specify routes that act upon the root
-     * of a directory.
-     *
-     * For example, if you have a directory structure like this:
-     *
-     * ```
-     * routes/
-     *  users/
-     *    index.js
-     *    retrieve.js
-     * ```
-     *
-     * You can tell the route engine to treat `index.js` as the root of the
-     * `users` directory.
-     *
-     * Note: Only accepts filenames.
-     *
-     * Defaults to `[ "index.js" ]`.
-     */
-    indexNames?: string[];
-    /**
-     * Specify a directory to save a JSON file that contains a tree of all
-     * registered routes, and a registry of all route handlers. This is useful
-     * for debugging purposes.
-     *
-     * Set this to `false` to disable this feature.
-     *
-     * Defaults to `.fs-routes`.
-     */
-    output?: string | false | null;
-    /**
-     * Choose if you wish to redact the file output paths for security reasons.
-     */
-    redactOutputFilePaths?: boolean;
-    /**
-     * Whether errors should be thrown. If this is set to `true`, operations will
-     * continue as normal and log any errors to the console. Otherwise, errors
-     * will be thrown and the operation will stop.
-     *
-     * Defaults to `false`.
-     */
-    silent?: boolean;
+  /**
+   * The root directory that contains all routes you wish to register.
+   * You may pass a relative path, or an absolute path. If you pass a relative path,
+   * it will be resolved relative to `process.cwd()`.
+   *
+   * Defaults to `routes`.
+   */
+  directory: FilePath;
+  
+  /**
+   * An optional app mount that is appended to the start of each route.
+   *
+   * For example, if you are building an application that will be hosted at
+   * `https://example.com/api`, you would set this to `/api` to indicate that
+   * all routes should be mounted at `/api`.
+   *
+   * This is designed to eliminate the need to specify a directory for app mounts.
+   *
+   * Defaults to an empty string.
+   */
+  appMount?: string | null;
+
+  /**
+   * Define any routes that are specific to a certain environment. This
+   * is resolved relative to the `directory` option.
+   *
+   * ```
+   * {
+   *   environmentRoutes: {
+   *     development: ["users", "posts"],
+   *     production: ["users"],
+   *     test: ["users", "posts", "comments"],
+   *     staging: ["users", "posts"],
+   *     custom_env: ["foo", "bar"]
+   *   }
+   * }
+   * ```
+   *
+   * If you instead wish to use the root directory as the environment, you must
+   * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
+   *
+   * Note: Only accepts directories.
+   */
+  environmentRoutes?: EnvironmentRoutes;
+
+  /**
+   * Sometimes you may want to specify routes that act upon the root
+   * of a directory.
+   *
+   * For example, if you have a directory structure like this:
+   *
+   * ```
+   * routes/
+   *  users/
+   *    index.js
+   *    retrieve.js
+   * ```
+   *
+   * You can tell `registerRoutes` to treat `index.js` as the root of the
+   * `users` directory.
+   *
+   * Note: Only accepts filenames.
+   *
+   * Defaults to `[ "index.js" ]`.
+   */
+  indexNames?: string[];
+
+  /**
+   * Specify a directory to save a JSON file that contains a tree of all
+   * registered routes, and a registry of all route handlers. This is useful
+   * for debugging purposes.
+   *
+   * Set this to `false` to disable this feature.
+   *
+   * Defaults to `.fs-routes`.
+   */
+  output?: string | false | null;
+
+  /**
+   * Choose if you wish to redact the file output paths for security reasons.
+   */
+  redactOutputFilePaths?: boolean;
+
+  /**
+   * Whether errors should be thrown. If this is set to `false`, operations will
+   * continue as normal.
+   *
+   * Defaults to `false`.
+   */
+  silent?: boolean;
+
+  /**
+   * A function that is called before a route undergoes registration. This
+   * is called before environment based checks are performed, and before the route
+   * is conditionally checked for registration. Any changes made to the route
+   * object will be reflected in the registration process and the file output.
+   *
+   * **This is not middleware**. This will only be called once per route and won't
+   * be called for each request.
+   *
+   * @param route
+   */
+  beforeRegistration?(route: RouteSchema): RouteSchema;
 }
 ```
 ### Routing
@@ -582,6 +600,17 @@ export interface RouterOptions {
    * it will be converted to a string using `.source`.
    */
   paramsRegex?: ParamsRegex;
+  /**
+   * Metadata that is passed to the route and is available
+   * in the `req` object as `req.routeMetadata`.
+   *
+   * This is useful for passing data to middleware that is
+   * specific to a given route where you want to have request
+   * based context or conditional logic.
+   *
+   * By default, all metadata is defaulted to `{}`.
+   */
+  metadata?: Record<string, any>;
 }
 ```
 </details>
@@ -627,6 +656,28 @@ export const routeOptions: RouterOptions = {
   }
 };
 ```
+
+#### `metadata`
+
+Metadata can be defined per route file that will be passed onto the request object. This value will be available on the `req.routeMetadata` property.
+
+Default: `{}`
+
+```typescript
+// routes/account/register.ts
+
+app.get("/", (req, res) => {
+  res.send(req.routeMetadata.title); // Register
+})
+
+export const routeOptions: RouterOptions = {
+  metadata: {
+    title: "Register",
+    description: "Register a new account"
+  }
+};
+```
+
 See the [examples](examples) for more information.
 
 ## Caveats
