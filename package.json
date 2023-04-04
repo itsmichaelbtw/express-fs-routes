@@ -19,7 +19,9 @@
     "CHANGELOG.md",
     "LICENSE",
     "package.json",
-    "tsconfig.json"
+    "tsconfig.json",
+    "types",
+    "index.d.ts"
   ],
   "scripts": {
     "start": "nodemon --exec \"npm run server\"",

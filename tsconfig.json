@@ -17,6 +17,7 @@
             "module": "ES2020"
         },
     },
-    "include": ["lib"],
+    "include": ["lib"], 
+    "files": ["index.d.ts"],
     "exclude": ["test", "node_modules", "dist"],
 }
