@@ -71,11 +71,6 @@ const routes: GenerateRoutes[] = [
         route_options: {}
     },
     {
-        absolute: join("error.ts"),
-        route_options: {},
-        template: Templates.error
-    },
-    {
         absolute: join("engine_options", "environment_routes", "development", "index.ts"),
         route_options: {}
     },
@@ -167,6 +162,14 @@ const routes: GenerateRoutes[] = [
         route_options: {
             paramsRegex: {
                 regex: "regex_[a-zA-Z0-9]+"
+            }
+        }
+    },
+    {
+        absolute: join("handler_options", "metadata.ts"),
+        route_options: {
+            metadata: {
+                my_custom_metadata: "my_custom_metadata"
             }
         }
     },
