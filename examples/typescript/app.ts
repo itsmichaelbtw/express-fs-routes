@@ -1,20 +1,26 @@
 import express from "express";
+import path from "path";
 
-import { RouteEngine } from "../../lib";
+import { RouteEngine } from "../../dist/common/fs-routes.cjs";
 
 const app = express();
+const port = 3002;
 
 const fsRoutes = new RouteEngine(app, "commonjs");
 
-async function start() {
-    fsRoutes.setOptions({
-        directory: "examples/typescript/routes"
-    });
+fsRoutes.setOptions({
+    directory: path.join(__dirname, "routes"),
+    beforeRegistration(route) {
+        return route;
+    },
+    redactOutputFilePaths: true
+});
 
+async function start() {
     await fsRoutes.registerRoutes();
 
-    app.listen(3000, () => {
-        console.log("Server started on port 3000");
+    app.listen(port, () => {
+        console.log(`Typescript example app listening at http://localhost:${port}`);
     });
 }
 

@@ -1,12 +1,13 @@
 {
+    "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "lib": ["ESNext", "DOM"],
-        "target": "ESNext",
-        "module": "CommonJS",
-        "moduleResolution": "Node",
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "typeRoots": ["./express.d.ts", "./node_modules/@types"],
-    }
+        "declarationDir": "dist"
+    },
+    "ts-node": {
+        "compilerOptions": {
+            "module": "CommonJS"
+        }
+    },
+    "include": ["routes", "controllers"],
+    "files": ["express.d.ts", "../../index.d.ts"]
 }

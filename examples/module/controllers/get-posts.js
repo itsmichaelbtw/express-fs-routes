@@ -7,6 +7,7 @@ export function getPosts() {
             path.join(process.cwd(), "..", "database/posts.json"),
             "utf-8"
         );
+
         req.posts = JSON.parse(posts);
         next();
     };

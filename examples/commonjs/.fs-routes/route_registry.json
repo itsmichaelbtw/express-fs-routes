@@ -6,7 +6,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "",
@@ -21,7 +22,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/ping",
@@ -36,7 +38,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/posts",
@@ -51,7 +54,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/posts",
@@ -66,7 +70,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/posts/search",
@@ -81,7 +86,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users",
@@ -96,7 +102,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users",
@@ -111,7 +118,8 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {}
+      "paramsRegex": {},
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/search",
@@ -128,7 +136,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",
@@ -145,7 +154,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",
@@ -162,7 +172,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",
@@ -179,7 +190,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",
@@ -196,7 +208,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",
@@ -213,7 +226,8 @@
       "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
-      }
+      },
+      "metadata": {}
     },
     "status": "registered",
     "base_path": "/users/:id(user_[a-z0-9]{9})",

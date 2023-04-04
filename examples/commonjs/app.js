@@ -8,15 +8,15 @@ function join(...name) {
 }
 
 const app = express();
-const port = 5050;
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const port = 3000;
 
 const fsRoutes = new RouteEngine(app, "commonjs");
 
 fsRoutes.setOptions({
     directory: join("routes"),
+    beforeRegistration(route) {
+        return route;
+    },
     redactOutputFilePaths: true
 });
 
@@ -24,7 +24,7 @@ async function startApp() {
     await fsRoutes.registerRoutes();
 
     app.listen(port, () => {
-        console.log(`Example app listening at http://localhost:${port}`);
+        console.log(`CommonJS Example app listening at http://localhost:${port}`);
     });
 }
 
