@@ -32,6 +32,10 @@ export function parseRouteRegistrationOptions(
         opts.output = DEFAULT_OPTIONS.output;
     }
 
+    if (!isFunction(opts.beforeRegistration)) {
+        opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
+    }
+
     return opts;
 }
 
@@ -66,6 +70,10 @@ export function parseRouterHandlerOptions(options: RouterOptions): RouterOptions
         }
     } else {
         opts.paramsRegex = {};
+    }
+
+    if (!isObject(options.metadata)) {
+        opts.metadata = {};
     }
 
     return opts;

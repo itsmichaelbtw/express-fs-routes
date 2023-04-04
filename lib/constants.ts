@@ -13,12 +13,14 @@ export const DEFAULT_OPTIONS: RouteRegistrationOptions = {
     output: OUTPUT_DIRECTORY,
     silent: false,
     environmentRoutes: undefined,
-    redactOutputFilePaths: false
+    redactOutputFilePaths: false,
+    beforeRegistration: (route) => route
 };
 
 export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
     environments: null,
     isIndex: null,
     skip: false,
-    paramsRegex: {}
+    paramsRegex: {},
+    metadata: {}
 };

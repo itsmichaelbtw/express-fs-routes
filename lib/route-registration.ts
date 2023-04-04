@@ -10,8 +10,10 @@ import type {
     RouteSchema,
     RouteRegistry,
     RouteRegistrationOptions,
-    ParamsRegex
+    ParamsRegex,
+    RouteHandlerMiddleware
 } from "./types";
+import type { Request, Response, NextFunction } from "express";
 
 import { createDirectoryTree } from "./directory-tree";
 import { Redact, Output } from "./output";
@@ -301,7 +303,7 @@ class Engine {
 
             const merged: RouteSchema = {
                 ...baseSchema,
-                method: method,
+                method: method.toLowerCase(),
                 route_options: handler.routeOptions
             };
 
@@ -482,6 +484,24 @@ class Engine {
     }
 
     /**
+     * Uses the given route handler middleware. Undergoes
+     * a registration hook to allow for any modifications to the
+     * route schema and handler.
+     *
+     * @param route The route schema.
+     * @param handler The route handler.
+     */
+    protected useRouteHandlerMiddleware(route: RouteSchema, handler: RouteHandler): void {
+        const useMiddleware: RouteHandlerMiddleware = (req, res, next) => {
+            req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+
+            return handler.call(this.$app, req, res, next);
+        };
+
+        this.$app.use.call(this.$app, route.full_path, useMiddleware);
+    }
+
+    /**
      * Binds the available routes to the Express application
      * and performs environment based checking.
      *
@@ -489,7 +509,20 @@ class Engine {
      * @param handler The route handler to bind.
      */
     protected bindRoutes(routes: RouteRegistry, handler: RouteHandler): void {
-        for (const route of routes) {
+        for (let [index, route] of routes.entries()) {
+            const hookRoute = this.$options.beforeRegistration(route);
+
+            if (!isObject(hookRoute)) {
+                route.error = "The `beforeRegistration` hook returned an invalid value.";
+                route.status = "error";
+
+                debugOrThrowError(route.error, "red");
+
+                continue;
+            } else {
+                route = hookRoute;
+            }
+
             const routeOptions = route.route_options;
 
             if (routeOptions.skip) {
@@ -503,13 +536,17 @@ class Engine {
                 const environment = getCurrentWorkingEnvironment();
 
                 if (proceed) {
-                    this.$app.use.call(this.$app, route.base_path, handler);
+                    this.useRouteHandlerMiddleware(route, handler);
 
                     route.status = "registered";
                     route.message = `Route was registered successfully for ${environment}`;
                 } else {
                     route.status = "skipped";
                     route.message = `Route was skipped for ${environment}`;
+                }
+
+                if (route) {
+                    routes[index] = route;
                 }
             });
         }
