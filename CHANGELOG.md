@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.2.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.2.0...v2.2.1) (2023-04-05)
+
+
+### Fixed
+
+* build output now removes source files ([604cf1c](https://github.com/itsmichaelbtw/express-fs-routes/commit/604cf1c2b197f4a2033d07e3bd6beee14fcfb7d2))
+* prettier eof changed to auto ([90736b6](https://github.com/itsmichaelbtw/express-fs-routes/commit/90736b6d93fa0db8b3439682ca9e29fe85ce3931))
+* type referencing in typescript projects ([3cc245e](https://github.com/itsmichaelbtw/express-fs-routes/commit/3cc245e7a7b7bdf531f2637645a40a255e7e38fd))
+
 ## [2.2.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.1.1...v2.2.0) (2023-04-04)
 
 

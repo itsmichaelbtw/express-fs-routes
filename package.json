@@ -1,6 +1,6 @@
 {
     "name": "express-fs-routes",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "description": "Automatically create Express routes with one line of code using the file system. No more hard coding routes into your project's main file.",
     "main": "dist/common/fs-routes.cjs.js",
     "module": "dist/module/fs-routes.esm.js",
@@ -104,4 +104,3 @@
     ],
     "license": "MIT"
 }
-
