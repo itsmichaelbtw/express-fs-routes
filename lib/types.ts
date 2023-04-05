@@ -308,7 +308,6 @@ export interface RouteRegistrationOptions {
      * Defaults to `false`.
      */
     silent?: boolean;
-
     /**
      * A function that is called before a route undergoes registration. This
      * is called before environment based checks are performed, and before the route
@@ -318,7 +317,32 @@ export interface RouteRegistrationOptions {
      * **This is not middleware**. This will only be called once per route and won't
      * be called for each request.
      *
-     * @param route
+     * @param route;
+     * @returns The route schema object.
      */
     beforeRegistration?(route: RouteSchema): RouteSchema;
+    /**
+     * Manage the middleware that is responsible for calling the route handler. By
+     * providing this value, you are required to call the route handler yourself
+     * and assign the route metadata to the request object.
+     *
+     * @param handler
+     * @returns An Express middleware function.
+     *
+     * @example
+     * ```typescript
+     * const routeEngine = new RouteEngine(app, "module");
+     *
+     * routeEngine.setOptions({
+     *  customMiddleware: (route, handler) => {
+     *   return (req, res, next) => {
+     *    req.routeMetadata = route.route_options.metadata ?? {};
+     *
+     *    return handler.call(app, req, res, next);
+     *   }
+     *  }
+     * })
+     * ```
+     */
+    customMiddleware?(route: RouteSchema, handler: RouteHandler): RouteHandlerMiddleware;
 }

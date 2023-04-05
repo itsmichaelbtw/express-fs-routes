@@ -244,6 +244,9 @@ function parseRouteRegistrationOptions(options) {
   if (!isFunction(opts.beforeRegistration)) {
     opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
   }
+  if (!isFunction(opts.customMiddleware)) {
+    opts.customMiddleware = null;
+  }
   return opts;
 }
 function parseRouterHandlerOptions(options) {
@@ -279,6 +282,42 @@ function parseRouterHandlerOptions(options) {
   return opts;
 }
 
+// import type { Request, Response, NextFunction } from "express";
+
+/**
+ * A Higher Order Function that wraps around an Express middleware function
+ * that is asynchronous. By nature, Express does not automatically catch
+ * errors thrown in asynchronous middleware functions. This function wraps
+ * around the middleware and catches any errors thrown then passes it to
+ * the next function in the middleware chain. Primarily used for error handling.
+ *
+ * You are free to either wrap the middleware within this function
+ * or use a try/catch block within the middleware function. Rembering
+ * to call next(error) if an error is caught.
+ *
+ * @param middleware The Express middleware function to wrap around.
+ *
+ * @returns A function that wraps around the middleware function.
+ *
+ * @example
+ * ```typescript
+ * import { catchError } from "./utils";
+ *
+ * app.get('/async-error', catchError(async (req, res) => {
+ *  throw new Error('Async Error')
+ * }))
+ *
+ * ```
+ */
+function catchError(middleware) {
+  return async function (req, res, next) {
+    try {
+      await middleware(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
 function getRouteOptions(handler) {
   // each individual handler exports a property called `routeOptions`
   // which controls the route's behavior when it is registered.
@@ -393,7 +432,7 @@ class Engine {
       if (routeHandler === null) {
         const schema = this.createRouteSchema(null, fileEntry, schema => {
           schema.status = "skipped";
-          schema.error = "Likely a function is not the default export.";
+          schema.error = "Most likely forgot to export a default function.";
           return schema;
         });
         this.appendToRegistry(schema);
@@ -636,11 +675,34 @@ class Engine {
    * @param handler The route handler.
    */
   useRouteHandlerMiddleware(route, handler) {
-    const useMiddleware = (req, res, next) => {
-      req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-      return handler.call(this.$app, req, res, next);
-    };
-    this.$app.use.call(this.$app, route.full_path, useMiddleware);
+    if (this.$options.customMiddleware) {
+      this.$app.use.call(this.$app, route.full_path, this.$options.customMiddleware(route, handler));
+      return;
+    }
+
+    // const useMiddleware: RouteHandlerMiddleware = (req, res, next) => {
+    //     console.log("request received");
+    //     req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+
+    //     handler.call(this.$app, req, res, next);
+    // };
+
+    // this.$app.use.bind(this.$app, route.full_path, useMiddleware);
+
+    // this.$app.use.call(this.$app, route.full_path, (req, res, next) => {
+    //     console.log("request received");
+    //     // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+
+    //     handler.call(this.$app, req, res, next);
+    // });
+
+    this.$app[route.method].call(this.$app, route.full_path, (req, res, next) => {
+      console.log("request received");
+      res.send("hello world");
+      // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+
+      // handler.call(this.$app, req, res, next);
+    });
   }
 
   /**
@@ -755,5 +817,5 @@ class RouteEngine extends Engine {
   // public async registerSingleRoute(): Promise<void> {}
 }
 
-export { RouteEngine };
+export { RouteEngine, catchError };
 //# sourceMappingURL=fs-routes.esm.js.map

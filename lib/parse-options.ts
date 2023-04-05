@@ -36,6 +36,10 @@ export function parseRouteRegistrationOptions(
         opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
     }
 
+    if (!isFunction(opts.customMiddleware)) {
+        opts.customMiddleware = null;
+    }
+
     return opts;
 }
 

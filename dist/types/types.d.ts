@@ -1,5 +1,6 @@
 import type { IRouter, Request, Response, NextFunction } from "express";
 type Methods = "checkout" | "copy" | "delete" | "get" | "head" | "lock" | "merge" | "mkactivity" | "mkcol" | "move" | "m-search" | "notify" | "options" | "patch" | "post" | "purge" | "put" | "report" | "search" | "subscribe" | "trace" | "unlock" | "unsubscribe";
+type MetaData = Record<string, any>;
 interface EnvironmentRoutes {
     [key: string]: FilePath[];
 }
@@ -58,7 +59,7 @@ export interface DirectoryTree {
  * This provides a visual representation of the routes that will
  * be registered.
  */
-export interface RouteSchema {
+export interface RouteSchema<T extends MetaData = MetaData> {
     /**
      * The resolved method of the route.
      */
@@ -86,7 +87,7 @@ export interface RouteSchema {
     /**
      * Any options that were exported from the file.
      */
-    route_options: RouterOptions;
+    route_options: RouterOptions<T>;
     /**
      * The status of the route.
      */
@@ -123,7 +124,7 @@ export interface RouteHandler extends IRouter {
  * }
  * ```
  */
-export interface RouterOptions {
+export interface RouterOptions<T extends MetaData = MetaData> {
     /**
      * Specify certain environments you want this route to be registered in. If
      * you wish to register a route in all environments, you can omit this property
@@ -180,7 +181,7 @@ export interface RouterOptions {
      *
      * By default, all metadata is defaulted to `{}`.
      */
-    metadata?: Record<string, any>;
+    metadata?: T;
 }
 /**
  * The options that are passed to the `registerRoutes` function.
@@ -279,8 +280,33 @@ export interface RouteRegistrationOptions {
      * **This is not middleware**. This will only be called once per route and won't
      * be called for each request.
      *
-     * @param route
+     * @param route;
+     * @returns The route schema object.
      */
     beforeRegistration?(route: RouteSchema): RouteSchema;
+    /**
+     * Manage the middleware that is responsible for calling the route handler. By
+     * providing this value, you are required to call the route handler yourself
+     * and assign the route metadata to the request object.
+     *
+     * @param handler
+     * @returns An Express middleware function.
+     *
+     * @example
+     * ```typescript
+     * const routeEngine = new RouteEngine(app, "module");
+     *
+     * routeEngine.setOptions({
+     *  customMiddleware: (route, handler) => {
+     *   return (req, res, next) => {
+     *    req.routeMetadata = route.route_options.metadata ?? {};
+     *
+     *    return handler.call(app, req, res, next);
+     *   }
+     *  }
+     * })
+     * ```
+     */
+    customMiddleware?(route: RouteSchema, handler: RouteHandler): RouteHandlerMiddleware;
 }
 export {};

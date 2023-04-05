@@ -1,5 +1,33 @@
+type AsyncFunction<T> = (req: Request, res: Response, next: NextFunction) => Promise<T>;
+/**
+ * A Higher Order Function that wraps around an Express middleware function
+ * that is asynchronous. By nature, Express does not automatically catch
+ * errors thrown in asynchronous middleware functions. This function wraps
+ * around the middleware and catches any errors thrown then passes it to
+ * the next function in the middleware chain. Primarily used for error handling.
+ *
+ * You are free to either wrap the middleware within this function
+ * or use a try/catch block within the middleware function. Rembering
+ * to call next(error) if an error is caught.
+ *
+ * @param middleware The Express middleware function to wrap around.
+ *
+ * @returns A function that wraps around the middleware function.
+ *
+ * @example
+ * ```typescript
+ * import { catchError } from "./utils";
+ *
+ * app.get('/async-error', catchError(async (req, res) => {
+ *  throw new Error('Async Error')
+ * }))
+ *
+ * ```
+ */
+export declare function catchError<T = void>(middleware: AsyncFunction<T>): (req: Request, res: Response, next: NextFunction) => Promise<void>;
 import express from "express";
 import type { DirectoryTree, FilePath, RouteHandler, RouterOptions, RouteSchema, RouteRegistry, RouteRegistrationOptions, ParamsRegex } from "./types";
+import type { Request, Response, NextFunction } from "express";
 type ExpressApp = express.Application;
 type RouteRegistrationContext = "commonjs" | "module";
 type RouteModifier<T, U> = (path: T, routeOptions: RouterOptions) => U;
