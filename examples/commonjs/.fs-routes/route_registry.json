@@ -86,54 +86,6 @@
       "environments": null,
       "isIndex": null,
       "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users",
-    "extended_path": null,
-    "full_path": "/users",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "post",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users",
-    "extended_path": null,
-    "full_path": "/users",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/search",
-    "extended_path": null,
-    "full_path": "/users/search",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
       "paramsRegex": {
         "id": "user_[a-z0-9]{9}"
       },
@@ -233,6 +185,54 @@
     "base_path": "/users/:id(user_[a-z0-9]{9})",
     "extended_path": null,
     "full_path": "/users/:id(user_[a-z0-9]{9})",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {},
+      "metadata": {}
+    },
+    "status": "registered",
+    "base_path": "/users",
+    "extended_path": null,
+    "full_path": "/users",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "post",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {},
+      "metadata": {}
+    },
+    "status": "registered",
+    "base_path": "/users",
+    "extended_path": null,
+    "full_path": "/users",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "method": "get",
+    "absolute_path": "...",
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {},
+      "metadata": {}
+    },
+    "status": "registered",
+    "base_path": "/users/search",
+    "extended_path": null,
+    "full_path": "/users/search",
     "message": "Route was registered successfully for development"
   }
 ]
