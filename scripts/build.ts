@@ -11,6 +11,19 @@ function stringify(obj: any) {
     return JSON.stringify(obj, null, 2);
 }
 
+function deleteSourceFiles(folder: string) {
+    const files = fs.readdirSync(folder);
+
+    for (const file of files) {
+        const filePath = path.join(folder, file);
+        const isMap = file.endsWith(".map");
+
+        if (isMap) {
+            fs.rmSync(filePath, { force: true });
+        }
+    }
+}
+
 fs.writeFileSync(
     path.join(esm, "package.json"),
     stringify({
@@ -26,3 +39,6 @@ fs.writeFileSync(
         types: "../types/index.d.ts"
     })
 );
+
+deleteSourceFiles(esm);
+deleteSourceFiles(cjs);
