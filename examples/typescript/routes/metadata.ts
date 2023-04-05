@@ -1,6 +1,10 @@
 import express from "express";
 
 import type { RouterOptions } from "../../../lib";
+interface Metadata {
+    title: number[];
+    description: string;
+}
 
 const router = express.Router();
 
@@ -9,9 +13,9 @@ router.get("/", (req, res) => {
 });
 
 export default router;
-export const routeOptions: RouterOptions = {
+export const routeOptions: RouterOptions<Metadata> = {
     metadata: {
-        title: "Metadata",
+        title: [1, 2, 3],
         description: "This is a description"
     }
 };
