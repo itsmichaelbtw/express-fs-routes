@@ -1,13 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import type {
-    FilePath,
-    TreeComponentType,
-    DirectoryCallback,
-    DirectoryTree,
-    RouteRegistry
-} from "./types";
+import type { FilePath, TreeComponentType, DirectoryCallback, TreeNode } from "./types";
 
 import { asyncReduce } from "./utils";
 
@@ -29,8 +23,8 @@ async function stats(filePath: FilePath): Promise<fs.Stats> {
     });
 }
 
-function newComponentEntry(relativePath: FilePath, component: TreeComponentType): DirectoryTree {
-    const entry: DirectoryTree = {
+function newComponentEntry(relativePath: FilePath, component: TreeComponentType): TreeNode {
+    const entry: TreeNode = {
         name: path.basename(relativePath),
         absolute_path: relativePath,
         type: component
@@ -53,7 +47,7 @@ function newComponentEntry(relativePath: FilePath, component: TreeComponentType)
 export async function createDirectoryTree(
     dir: FilePath,
     onFile: DirectoryCallback
-): Promise<DirectoryTree> {
+): Promise<TreeNode> {
     const directory = readDirectorySync(dir);
 
     if (directory.length === 0) {
@@ -63,7 +57,7 @@ export async function createDirectoryTree(
     const resolvedPath = dir;
     const componentEntry = newComponentEntry(resolvedPath, "directory");
 
-    const directoryTree = await asyncReduce(
+    const TreeNode = await asyncReduce(
         directory,
         async (tree, file) => {
             const filePath = path.join(resolvedPath, file);
@@ -91,5 +85,5 @@ export async function createDirectoryTree(
         componentEntry
     );
 
-    return directoryTree;
+    return TreeNode;
 }
