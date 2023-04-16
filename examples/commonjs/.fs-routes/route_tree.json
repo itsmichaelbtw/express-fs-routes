@@ -36,17 +36,17 @@
       "type": "directory",
       "children": [
         {
-          "name": "[id].js",
-          "absolute_path": "...",
-          "type": "file"
-        },
-        {
           "name": "index.js",
           "absolute_path": "...",
           "type": "file"
         },
         {
           "name": "search.js",
+          "absolute_path": "...",
+          "type": "file"
+        },
+        {
+          "name": "[id].js",
           "absolute_path": "...",
           "type": "file"
         }

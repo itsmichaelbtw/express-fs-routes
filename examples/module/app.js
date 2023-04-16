@@ -15,6 +15,7 @@ const fsRoutes = new RouteEngine(app, "module");
 
 fsRoutes.setOptions({
     directory: join("routes"),
+    output: join(".fs-routes"),
     redactOutputFilePaths: true
 });
 

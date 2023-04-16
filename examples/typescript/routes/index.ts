@@ -10,5 +10,6 @@ router.get("/", (req, res) => {
 
 export default router;
 export const routeOptions: RouterOptions = {
-    isIndex: true
+    isIndex: true,
+    skip: false
 };

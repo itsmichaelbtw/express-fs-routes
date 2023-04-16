@@ -1,4 +1,4 @@
-import type { RouteSchema, RouteHandler, RouteHandlerMiddleware } from "../../dist/types";
+import type { RouterSchema } from "../../dist/types";
 
 import express from "express";
 import path from "path";
@@ -12,27 +12,11 @@ const fsRoutes = new RouteEngine(app, "commonjs");
 
 fsRoutes.setOptions({
     directory: path.join(__dirname, "routes"),
-    redactOutputFilePaths: true,
-    beforeRegistration(route: RouteSchema) {
-        return route;
-    }
-    // customMiddleware(route: RouteSchema, handler: RouteHandler): RouteHandlerMiddleware {
-    //     return (req, res, next) => {
-    //         console.log("custom middleware called");
-    //         req.routeMetadata = route.route_options.metadata ?? {};
-
-    //         handler.call(app, req, res, next);
-    //     };
-    // }
+    output: path.join(__dirname, ".fs-routes"),
+    redactOutputFilePaths: true
 });
 
 async function start() {
-    app.use((req, res, next) => {
-        console.log("incoming request");
-
-        next();
-    });
-
     await fsRoutes.registerRoutes();
 
     app.listen(port, () => {

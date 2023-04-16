@@ -1,5 +1,5 @@
 import type { IRouter, Request, Response, NextFunction } from "express";
-type Methods = "checkout" | "copy" | "delete" | "get" | "head" | "lock" | "merge" | "mkactivity" | "mkcol" | "move" | "m-search" | "notify" | "options" | "patch" | "post" | "purge" | "put" | "report" | "search" | "subscribe" | "trace" | "unlock" | "unsubscribe";
+export type Methods = "checkout" | "copy" | "delete" | "get" | "head" | "lock" | "merge" | "mkactivity" | "mkcol" | "move" | "m-search" | "notify" | "options" | "patch" | "post" | "purge" | "put" | "report" | "search" | "subscribe" | "trace" | "unlock" | "unsubscribe";
 type MetaData = Record<string, any>;
 interface EnvironmentRoutes {
     [key: string]: FilePath[];
@@ -10,7 +10,7 @@ export interface ParamsRegex {
 /**
  * An express middleware function that is used to handle a given route.
  */
-export type RouteHandlerMiddleware = (req: Request, res: Response, next: NextFunction) => void;
+export type ExpressMiddleware = (req: Request, res: Response, next: NextFunction) => void;
 /**
  * The file path to a given route file.
  */
@@ -25,17 +25,17 @@ export type TreeComponentType = "file" | "directory";
  * The callback function that is called when
  * a directory is traversed and a file is found.
  */
-export type DirectoryCallback = (fileEntry: DirectoryTree) => Promise<void>;
+export type DirectoryCallback = (fileEntry: TreeNode) => Promise<void>;
 /**
  * The registry of routes that are registered to
  * the express app.
  */
-export type RouteRegistry = RouteSchema[];
+export type RouterRegistry = RouterSchema[];
 /**
- * The directory tree is a recursive data structure that represents the
+ * The tree node is a recursive data structure that represents the
  * structure of a given directory. It is used to register routes.
  */
-export interface DirectoryTree {
+export interface TreeNode {
     /**
      * The absolute path to the directory or file.
      */
@@ -52,42 +52,30 @@ export interface DirectoryTree {
      * The children of the directory. This will only be present if the component type
      * is `directory`.
      */
-    children?: DirectoryTree[];
+    children?: TreeNode[];
 }
 /**
  * A generated route schema created after the directory is traversed.
  * This provides a visual representation of the routes that will
  * be registered.
  */
-export interface RouteSchema<T extends MetaData = MetaData> {
-    /**
-     * The resolved method of the route.
-     */
-    method: Methods;
+export interface RouterSchema {
     /**
      * The absolute path of the file location.
      */
     absolute_path: FilePath;
     /**
-     * The relative path of the route. Does not include
-     * the extended path.
+     * The relative path of the route.
      */
     base_path: string;
     /**
-     * If the route contains an internal route.
+     * The attached layers of the route.
      */
-    extended_path: string;
-    /**
-     * The full path of the route. This is the combination of the
-     * base path and the extended path.
-     *
-     * This is used to register the route to the express app.
-     */
-    full_path: string;
+    layers: RouterLayer[];
     /**
      * Any options that were exported from the file.
      */
-    route_options: RouterOptions<T>;
+    route_options: RouterOptions<MetaData>;
     /**
      * The status of the route.
      */
@@ -102,9 +90,30 @@ export interface RouteSchema<T extends MetaData = MetaData> {
     message?: string;
 }
 /**
+ * A router layer that is attached to a given router.
+ */
+export interface RouterLayer {
+    /**
+     * The resolved method of the route.
+     */
+    method: Methods;
+    /**
+     * The number is registered middleware functions.
+     */
+    middleware_count: number;
+    /**
+     * The path of the route.
+     */
+    complete_path: string;
+    /**
+     * The extended path of the route.
+     */
+    extended_path: string;
+}
+/**
  * An object that represents a given route when requiring a route file.
  */
-export interface RouteHandler extends IRouter {
+export interface RouterHandler extends IRouter {
     /**
      * A user defined object that is exported from the route file. This controls
      * the registration behaviour of the route.
@@ -283,7 +292,7 @@ export interface RouteRegistrationOptions {
      * @param route;
      * @returns The route schema object.
      */
-    beforeRegistration?(route: RouteSchema): RouteSchema;
+    beforeRegistration?(route: RouterSchema): RouterSchema;
     /**
      * Manage the middleware that is responsible for calling the route handler. By
      * providing this value, you are required to call the route handler yourself
@@ -307,6 +316,12 @@ export interface RouteRegistrationOptions {
      * })
      * ```
      */
-    customMiddleware?(route: RouteSchema, handler: RouteHandler): RouteHandlerMiddleware;
+    customMiddleware?(route: RouterSchema, handler: RouterHandler): ExpressMiddleware;
+    /**
+     * Intercept the layer that is registered to the Express app and provided
+     * your own custom handler for a given path. You can either return a
+     * new handler, or the original handler.
+     */
+    interceptLayer?(layer: RouterLayer): RouterLayer;
 }
 export {};

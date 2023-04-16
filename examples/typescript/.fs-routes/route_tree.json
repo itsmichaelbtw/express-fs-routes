@@ -41,17 +41,17 @@
       "type": "directory",
       "children": [
         {
-          "name": "[id].ts",
-          "absolute_path": "...",
-          "type": "file"
-        },
-        {
           "name": "index.ts",
           "absolute_path": "...",
           "type": "file"
         },
         {
           "name": "search.ts",
+          "absolute_path": "...",
+          "type": "file"
+        },
+        {
+          "name": "[id].ts",
           "absolute_path": "...",
           "type": "file"
         }

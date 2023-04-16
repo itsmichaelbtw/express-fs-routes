@@ -1,42 +1,14 @@
-type AsyncFunction<T> = (req: Request, res: Response, next: NextFunction) => Promise<T>;
-/**
- * A Higher Order Function that wraps around an Express middleware function
- * that is asynchronous. By nature, Express does not automatically catch
- * errors thrown in asynchronous middleware functions. This function wraps
- * around the middleware and catches any errors thrown then passes it to
- * the next function in the middleware chain. Primarily used for error handling.
- *
- * You are free to either wrap the middleware within this function
- * or use a try/catch block within the middleware function. Rembering
- * to call next(error) if an error is caught.
- *
- * @param middleware The Express middleware function to wrap around.
- *
- * @returns A function that wraps around the middleware function.
- *
- * @example
- * ```typescript
- * import { catchError } from "./utils";
- *
- * app.get('/async-error', catchError(async (req, res) => {
- *  throw new Error('Async Error')
- * }))
- *
- * ```
- */
-export declare function catchError<T = void>(middleware: AsyncFunction<T>): (req: Request, res: Response, next: NextFunction) => Promise<void>;
 import express from "express";
-import type { DirectoryTree, FilePath, RouteHandler, RouterOptions, RouteSchema, RouteRegistry, RouteRegistrationOptions, ParamsRegex } from "./types";
-import type { Request, Response, NextFunction } from "express";
+import type { TreeNode, FilePath, RouterHandler, RouterOptions, RouterSchema, RouterRegistry, RouteRegistrationOptions, ParamsRegex } from "./types";
 type ExpressApp = express.Application;
 type RouteRegistrationContext = "commonjs" | "module";
-type RouteModifier<T, U> = (path: T, routeOptions: RouterOptions) => U;
+type RouteModifier = (routerSchema: RouterSchema, routeOptions: RouterOptions) => RouterSchema;
 declare class Engine {
     private readonly $app;
     private readonly $context;
-    protected $routeRegistry: RouteRegistry;
+    protected $registry: RouterRegistry;
     protected $options: RouteRegistrationOptions;
-    protected $resolveDirectory: string;
+    protected $activeDirectory: string;
     constructor(app: ExpressApp, context: RouteRegistrationContext);
     /**
      * The default output directory for the route registration.
@@ -49,7 +21,7 @@ declare class Engine {
     /**
      * Returns the route registry.
      */
-    get registry(): RouteRegistry;
+    get registry(): RouterRegistry;
     /**
      * Returns the absolute directory that is being used.
      */
@@ -76,7 +48,7 @@ declare class Engine {
      * @param fileEntry The file entry.
      * @returns A promise that resolves to void.
      */
-    protected onFile(fileEntry: DirectoryTree): Promise<void>;
+    protected onFile(fileEntry: TreeNode): Promise<void>;
     /**
      * Attempts to load the route handler from the given path and uses
      * the given context to determine how to load the file. If the file
@@ -86,28 +58,49 @@ declare class Engine {
      * @param path The path to the route handler.
      * @returns The route handler or null if the file is empty.
      */
-    protected requireHandler(path: FilePath): Promise<RouteHandler | null>;
+    protected requireHandler(path: FilePath): Promise<RouterHandler | null>;
+    protected newRouterSchema(routerHandler: RouterHandler, fileEntry: TreeNode, modifier?: RouteModifier): RouterSchema;
     /**
      * Converts the given route handler into a route schema and appends
      * it to the route registry. All associated layers within
      * the routes stack are also processed and appended to the registry.
      *
-     * @param handler The route handler that was required.
+     * @param routerHandler The route handler that was required.
      * @param fileEntry The file entry from the directory scan.
      * @param modifier A function that modifies the route schema.
      * @returns An array of route schemas.
      */
-    protected createRouteSchema(handler: RouteHandler | null, fileEntry: DirectoryTree, modifier?: RouteModifier<RouteSchema, RouteSchema>): RouteRegistry;
+    protected createRouteUrl(routerHandler: RouterHandler, fileEntry: TreeNode): string;
     /**
-     * Creates a route URL that is used to register
-     * the route to the Express application.
+     * Uses the given route schema to register the route
+     * with the Express application. This uses the `beforeRegistration`
+     * hook to allow for any modifications to the route schema.
      *
-     * @param absolutePath The absolute path to the route handler.
-     * @param routeOptions Any route options that were defined.
-     * @param modifier A function that modifies the route URL.
-     * @returns The route URL.
+     * Environmented based registration is also performed to determine
+     * if the route should be registered in the current environment.
+     *
+     * @param routerHandler The route handler.
+     * @param routerSchema The route schema.
      */
-    protected createRouteURL(absolutePath: string, routeOptions: RouterOptions, modifier: RouteModifier<string, string>): string;
+    protected useRouterSchema(routerHandler: RouterHandler, routerSchema: RouterSchema): void;
+    /**
+     * Performs environment based checking on the route schema
+     * and determines if the route should be registered in the
+     * current environment.
+     *
+     * @param RouterSchema The route schema to check.
+     * @param callback The callback to invoke.
+     */
+    protected environmentBasedRegistration(routerSchema: RouterSchema, callback: (proceed: boolean) => void): void;
+    /**
+     * Uses the given route handler middleware. Undergoes
+     * a registration hook to allow for any modifications to the
+     * route schema and handler.
+     *
+     * @param route The route schema.
+     * @param handler The route handler.
+     */
+    protected assignMiddleware(routerHandler: RouterHandler, routeSchema: RouterSchema): void;
     /**
      * Attempts to replace any slug parameters with
      * the provided regex pattern. Otherwise, the
@@ -117,39 +110,13 @@ declare class Engine {
      * @param paramsRegex The regex pattern to use.
      * @returns The modified URL.
      */
-    protected paramsRegexReplacement(url: string, paramsRegex: ParamsRegex): string;
+    protected replaceParamsRegExp(url: string, paramsRegex: ParamsRegex): string;
     /**
-     * Performs environment based checking on the route schema
-     * and determines if the route should be registered in the
-     * current environment.
+     * Appends the newly made route schema to the registry.
      *
-     * @param routeSchema The route schema to check.
-     * @param callback The callback to invoke.
+     * @param routerSchema The route schema to append.
      */
-    protected environmentBaseRegistration(routeSchema: RouteSchema, callback: (proceed: boolean) => void): void;
-    /**
-     * Uses the given route handler middleware. Undergoes
-     * a registration hook to allow for any modifications to the
-     * route schema and handler.
-     *
-     * @param route The route schema.
-     * @param handler The route handler.
-     */
-    protected useRouteHandlerMiddleware(route: RouteSchema, handler: RouteHandler): void;
-    /**
-     * Binds the available routes to the Express application
-     * and performs environment based checking.
-     *
-     * @param routes The routes to bind.
-     * @param handler The route handler to bind.
-     */
-    protected bindRoutes(routes: RouteRegistry, handler: RouteHandler): void;
-    /**
-     * Appends the given routes to the internal route registry.
-     *
-     * @param routes The routes to append.
-     */
-    protected appendToRegistry(routes: RouteRegistry): void;
+    protected append(routerSchema: RouterSchema): void;
 }
 /**
  * Initializes a new instance of the RouteEngine class
@@ -178,6 +145,6 @@ export declare class RouteEngine extends Engine {
     /**
      * Registers all available routes within a given directory.
      */
-    registerRoutes(): Promise<RouteRegistry>;
+    registerRoutes(): Promise<RouterRegistry>;
 }
 export {};

@@ -1,6 +1,6 @@
-import type { RouteRegistry, DirectoryTree } from "./types";
+import type { RouterRegistry, TreeNode } from "./types";
 interface OutputOptions {
-    data: RouteRegistry | DirectoryTree;
+    data: RouterRegistry | TreeNode;
     fileName: string;
 }
 type OutputCallback = () => [OutputOptions, OutputOptions];
@@ -21,7 +21,7 @@ export declare class Redact {
      * @param redact Whether to redact the absolute path.
      * @returns The redacted route registry.
      */
-    static routeRegistry(registry: RouteRegistry, redact: boolean): RouteRegistry;
+    static routeRegistry(registry: RouterRegistry, redact: boolean): RouterRegistry;
     /**
      * Redacts the absolute path from the directory tree nodes.
      *
@@ -29,6 +29,6 @@ export declare class Redact {
      * @param redact Whether to redact the absolute path.
      * @returns The redacted directory tree.
      */
-    static routeTree(tree: DirectoryTree, redact: boolean): DirectoryTree;
+    static routeTree(tree: TreeNode, redact: boolean): TreeNode;
 }
 export {};

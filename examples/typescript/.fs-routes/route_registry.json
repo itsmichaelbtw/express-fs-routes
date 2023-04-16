@@ -1,7 +1,15 @@
 [
   {
-    "method": "get",
     "absolute_path": "...",
+    "base_path": "/",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 1,
+        "extended_path": "/",
+        "complete_path": "/"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": true,
@@ -10,14 +18,19 @@
       "metadata": {}
     },
     "status": "registered",
-    "base_path": "",
-    "extended_path": null,
-    "full_path": "/",
     "message": "Route was registered successfully for development"
   },
   {
-    "method": "get",
     "absolute_path": "...",
+    "base_path": "/metadata",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 1,
+        "extended_path": "/",
+        "complete_path": "/metadata"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": null,
@@ -33,30 +46,19 @@
       }
     },
     "status": "registered",
-    "base_path": "/metadata",
-    "extended_path": null,
-    "full_path": "/metadata",
     "message": "Route was registered successfully for development"
   },
   {
-    "method": "get",
     "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
     "base_path": "/ping",
-    "extended_path": null,
-    "full_path": "/ping",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 1,
+        "extended_path": "/",
+        "complete_path": "/ping"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": null,
@@ -65,14 +67,25 @@
       "metadata": {}
     },
     "status": "registered",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "absolute_path": "...",
     "base_path": "/posts",
-    "extended_path": null,
-    "full_path": "/posts",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "post",
-    "absolute_path": "...",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/posts"
+      },
+      {
+        "method": "post",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/posts"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": null,
@@ -81,138 +94,19 @@
       "metadata": {}
     },
     "status": "registered",
-    "base_path": "/posts",
-    "extended_path": null,
-    "full_path": "/posts",
     "message": "Route was registered successfully for development"
   },
   {
-    "method": "get",
     "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
     "base_path": "/posts/search",
-    "extended_path": null,
-    "full_path": "/posts/search",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": null,
-    "full_path": "/users/:id(user_[0-9]+)",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": "/avatar",
-    "full_path": "/users/:id(user_[0-9]+)/avatar",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "put",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": "/avatar",
-    "full_path": "/users/:id(user_[0-9]+)/avatar",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": "/permissions",
-    "full_path": "/users/:id(user_[0-9]+)/permissions",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "put",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": "/permissions",
-    "full_path": "/users/:id(user_[0-9]+)/permissions",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "delete",
-    "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {
-        "id": "user_[0-9]+"
-      },
-      "metadata": {}
-    },
-    "status": "registered",
-    "base_path": "/users/:id(user_[0-9]+)",
-    "extended_path": null,
-    "full_path": "/users/:id(user_[0-9]+)",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "get",
-    "absolute_path": "...",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/posts/search"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": null,
@@ -221,14 +115,25 @@
       "metadata": {}
     },
     "status": "registered",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "absolute_path": "...",
     "base_path": "/users",
-    "extended_path": null,
-    "full_path": "/users",
-    "message": "Route was registered successfully for development"
-  },
-  {
-    "method": "post",
-    "absolute_path": "...",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/users"
+      },
+      {
+        "method": "post",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/users"
+      }
+    ],
     "route_options": {
       "environments": null,
       "isIndex": null,
@@ -237,25 +142,80 @@
       "metadata": {}
     },
     "status": "registered",
-    "base_path": "/users",
-    "extended_path": null,
-    "full_path": "/users",
     "message": "Route was registered successfully for development"
   },
   {
-    "method": "get",
     "absolute_path": "...",
-    "route_options": {
-      "environments": null,
-      "isIndex": null,
-      "skip": false,
-      "paramsRegex": {},
-      "metadata": {}
-    },
-    "status": "registered",
     "base_path": "/users/search",
-    "extended_path": null,
-    "full_path": "/users/search",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/users/search"
+      }
+    ],
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {},
+      "metadata": {}
+    },
+    "status": "registered",
+    "message": "Route was registered successfully for development"
+  },
+  {
+    "absolute_path": "...",
+    "base_path": "/users/:id(user_[0-9]+)",
+    "layers": [
+      {
+        "method": "get",
+        "middleware_count": 2,
+        "extended_path": "/",
+        "complete_path": "/users/:id(user_[0-9]+)"
+      },
+      {
+        "method": "get",
+        "middleware_count": 1,
+        "extended_path": "/avatar",
+        "complete_path": "/users/:id(user_[0-9]+)/avatar"
+      },
+      {
+        "method": "put",
+        "middleware_count": 1,
+        "extended_path": "/avatar",
+        "complete_path": "/users/:id(user_[0-9]+)/avatar"
+      },
+      {
+        "method": "get",
+        "middleware_count": 1,
+        "extended_path": "/permissions",
+        "complete_path": "/users/:id(user_[0-9]+)/permissions"
+      },
+      {
+        "method": "put",
+        "middleware_count": 1,
+        "extended_path": "/permissions",
+        "complete_path": "/users/:id(user_[0-9]+)/permissions"
+      },
+      {
+        "method": "delete",
+        "middleware_count": 1,
+        "extended_path": "/",
+        "complete_path": "/users/:id(user_[0-9]+)"
+      }
+    ],
+    "route_options": {
+      "environments": null,
+      "isIndex": null,
+      "skip": false,
+      "paramsRegex": {
+        "id": "user_[0-9]+"
+      },
+      "metadata": {}
+    },
+    "status": "registered",
     "message": "Route was registered successfully for development"
   }
 ]

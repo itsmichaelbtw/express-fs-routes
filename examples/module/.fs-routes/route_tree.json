@@ -41,12 +41,12 @@
       "type": "directory",
       "children": [
         {
-          "name": "[id].js",
+          "name": "index.js",
           "absolute_path": "...",
           "type": "file"
         },
         {
-          "name": "index.js",
+          "name": "[id].js",
           "absolute_path": "...",
           "type": "file"
         }
