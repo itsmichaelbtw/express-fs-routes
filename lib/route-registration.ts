@@ -1,61 +1,23 @@
-// import type { Request, Response, NextFunction } from "express";
-
-type AsyncFunction<T> = (req: Request, res: Response, next: NextFunction) => Promise<T>;
-
-/**
- * A Higher Order Function that wraps around an Express middleware function
- * that is asynchronous. By nature, Express does not automatically catch
- * errors thrown in asynchronous middleware functions. This function wraps
- * around the middleware and catches any errors thrown then passes it to
- * the next function in the middleware chain. Primarily used for error handling.
- *
- * You are free to either wrap the middleware within this function
- * or use a try/catch block within the middleware function. Rembering
- * to call next(error) if an error is caught.
- *
- * @param middleware The Express middleware function to wrap around.
- *
- * @returns A function that wraps around the middleware function.
- *
- * @example
- * ```typescript
- * import { catchError } from "./utils";
- *
- * app.get('/async-error', catchError(async (req, res) => {
- *  throw new Error('Async Error')
- * }))
- *
- * ```
- */
-export function catchError<T = void>(middleware: AsyncFunction<T>) {
-    return async function (req: Request, res: Response, next: NextFunction) {
-        try {
-            await middleware(req, res, next);
-        } catch (error) {
-            next(error);
-        }
-    };
-}
-
 import http from "http";
 import path from "path";
 import express from "express";
 
 import type {
-    DirectoryTree,
+    TreeNode,
     FilePath,
-    RouteHandler,
+    RouterHandler,
     RouterOptions,
-    RouteSchema,
-    RouteRegistry,
+    RouterSchema,
+    RouterRegistry,
     RouteRegistrationOptions,
     ParamsRegex,
-    RouteHandlerMiddleware
+    RouterLayer,
+    Methods,
+    ExpressMiddleware
 } from "./types";
-import type { Request, Response, NextFunction } from "express";
 
 import { createDirectoryTree } from "./directory-tree";
-import { Redact, Output } from "./output";
+import { LocalFileSave, initRedactFn } from "./save-to-json";
 import {
     isEmpty,
     isObject,
@@ -80,9 +42,9 @@ import { debug, DebugColors } from "./debug";
 
 type ExpressApp = express.Application;
 type RouteRegistrationContext = "commonjs" | "module";
-type RouteModifier<T, U> = (path: T, routeOptions: RouterOptions) => U;
+type RouteModifier = (routerSchema: RouterSchema, routeOptions: RouterOptions) => RouterSchema;
 
-function getRouteOptions(handler: RouteHandler): RouterOptions {
+function getRouteOptions(handler: RouterHandler): RouterOptions {
     // each individual handler exports a property called `routeOptions`
     // which controls the route's behavior when it is registered.
 
@@ -118,24 +80,24 @@ class Engine {
     private readonly $app: ExpressApp;
     private readonly $context: RouteRegistrationContext;
 
-    protected $routeRegistry: RouteRegistry;
+    protected $registry: RouterRegistry;
     protected $options: RouteRegistrationOptions;
-    protected $resolveDirectory: string;
+    protected $activeDirectory: string;
 
     constructor(app: ExpressApp, context: RouteRegistrationContext) {
         if (!app) {
-            throw new Error("No app was passed to the route engine.");
+            throw new TypeError("No app was passed to the route engine.");
         }
 
         if (context !== "commonjs" && context !== "module") {
-            throw new Error(
+            throw new TypeError(
                 "The engine expected a valid context. Must be either 'commonjs' or 'module'."
             );
         }
 
         this.$app = app;
         this.$context = context;
-        this.$routeRegistry = [];
+        this.$registry = [];
 
         this.setOptions(DEFAULT_OPTIONS);
     }
@@ -155,15 +117,15 @@ class Engine {
     /**
      * Returns the route registry.
      */
-    public get registry(): RouteRegistry {
-        return this.$routeRegistry;
+    public get registry(): RouterRegistry {
+        return this.$registry;
     }
 
     /**
      * Returns the absolute directory that is being used.
      */
     public get absoluteDirectory(): string {
-        return this.$resolveDirectory;
+        return this.$activeDirectory;
     }
 
     /**
@@ -175,9 +137,9 @@ class Engine {
         this.$options = parseRouteRegistrationOptions(options);
 
         if (path.isAbsolute(this.$options.directory)) {
-            this.$resolveDirectory = this.$options.directory;
+            this.$activeDirectory = this.$options.directory;
         } else {
-            this.$resolveDirectory = path.resolve(process.cwd(), this.$options.directory);
+            this.$activeDirectory = path.resolve(process.cwd(), this.$options.directory);
         }
 
         debugOrThrowError.silent = this.$options.silent;
@@ -195,7 +157,7 @@ class Engine {
             return filePath;
         }
 
-        return path.resolve(this.$resolveDirectory, filePath);
+        return path.resolve(this.$activeDirectory, filePath);
     }
 
     /**
@@ -206,38 +168,40 @@ class Engine {
      * @param fileEntry The file entry.
      * @returns A promise that resolves to void.
      */
-    protected async onFile(fileEntry: DirectoryTree): Promise<void> {
+    protected async onFile(fileEntry: TreeNode): Promise<void> {
         try {
-            const routeHandler = await this.requireHandler(fileEntry.absolute_path);
+            const routerHandler = await this.requireHandler(fileEntry.absolute_path);
 
             // If the route handler is null, it means that the file is empty
             // or something went wrong when requiring the file. In this case,
             // we skip the registration process but still append the route
             // to the registry.
-            if (routeHandler === null) {
-                const schema = this.createRouteSchema(null, fileEntry, (schema) => {
+            if (routerHandler === null) {
+                const schema = this.newRouterSchema(null, fileEntry, (schema) => {
                     schema.status = "skipped";
                     schema.error = "Most likely forgot to export a default function.";
                     return schema;
                 });
 
-                this.appendToRegistry(schema);
+                this.append(schema);
+
                 return debugOrThrowError(
                     `Route handler at ${fileEntry.absolute_path} is empty.`,
                     "red"
                 );
             }
 
-            const routeSchema = this.createRouteSchema(routeHandler, fileEntry);
-            this.bindRoutes(routeSchema, routeHandler);
+            const routerSchema = this.newRouterSchema(routerHandler, fileEntry);
+
+            this.useRouterSchema(routerHandler, routerSchema);
         } catch (error) {
-            const schema = this.createRouteSchema(null, fileEntry, (schema) => {
+            const schema = this.newRouterSchema(null, fileEntry, (schema) => {
                 schema.status = "error";
                 schema.error = error.message;
                 return schema;
             });
 
-            this.appendToRegistry(schema);
+            this.append(schema);
             debugOrThrowError(error, "red");
         }
     }
@@ -251,7 +215,7 @@ class Engine {
      * @param path The path to the route handler.
      * @returns The route handler or null if the file is empty.
      */
-    protected async requireHandler(path: FilePath): Promise<RouteHandler | null> {
+    protected async requireHandler(path: FilePath): Promise<RouterHandler | null> {
         function handleNonFunction(): void {
             debugOrThrowError(
                 `The default export of a route must be a function. Found at: ${path}`,
@@ -300,121 +264,93 @@ class Engine {
         return handler;
     }
 
+    protected newRouterSchema(
+        routerHandler: RouterHandler,
+        fileEntry: TreeNode,
+        modifier?: RouteModifier
+    ): RouterSchema {
+        const baseSchema: RouterSchema = {
+            absolute_path: fileEntry.absolute_path,
+            base_path: null,
+            layers: [],
+            route_options: {},
+            status: null
+        };
+
+        if (routerHandler === null || isEmpty(routerHandler.stack)) {
+            if (isFunction(modifier)) {
+                return modifier(baseSchema, {});
+            }
+
+            return baseSchema;
+        }
+
+        const basePath = this.createRouteUrl(routerHandler, fileEntry);
+
+        const layers: RouterLayer[] = [];
+
+        for (const layer of routerHandler.stack) {
+            const route = layer.route;
+            const path = route.path;
+            const stack = route.stack;
+
+            function layerMethod() {
+                const routeMethodKey = Object.keys(route.methods);
+
+                if (routeMethodKey.length) {
+                    return routeMethodKey[0];
+                }
+
+                return "unknown";
+            }
+
+            function fullPath() {
+                if (path === "/") {
+                    return basePath;
+                }
+
+                return basePath + path;
+            }
+
+            const method = layerMethod();
+            const completePath = fullPath();
+
+            const routerLayer: RouterLayer = {
+                method: method as Methods,
+                middleware_count: stack.length,
+                extended_path: path,
+                complete_path: completePath
+            };
+
+            layers.push(routerLayer);
+        }
+
+        baseSchema.layers = layers;
+        baseSchema.base_path = basePath;
+        baseSchema.route_options = routerHandler.routeOptions;
+
+        if (isFunction(modifier)) {
+            return modifier(baseSchema, routerHandler.routeOptions);
+        }
+
+        return baseSchema;
+    }
+
     /**
      * Converts the given route handler into a route schema and appends
      * it to the route registry. All associated layers within
      * the routes stack are also processed and appended to the registry.
      *
-     * @param handler The route handler that was required.
+     * @param routerHandler The route handler that was required.
      * @param fileEntry The file entry from the directory scan.
      * @param modifier A function that modifies the route schema.
      * @returns An array of route schemas.
      */
-    protected createRouteSchema(
-        handler: RouteHandler | null,
-        fileEntry: DirectoryTree,
-        modifier?: RouteModifier<RouteSchema, RouteSchema>
-    ): RouteRegistry {
-        const baseSchema: RouteSchema = {
-            method: null,
-            absolute_path: fileEntry.absolute_path,
-            route_options: {},
-            status: null,
-            base_path: null,
-            extended_path: null,
-            full_path: null
-        };
+    protected createRouteUrl(routerHandler: RouterHandler, fileEntry: TreeNode): string {
+        let routePath = removeFileExtension(fileEntry.absolute_path);
 
-        if (handler === null || isEmpty(handler.stack)) {
-            if (isFunction(modifier)) {
-                return [modifier(baseSchema, {})];
-            }
-
-            return [baseSchema];
-        }
-
-        const schemas: RouteRegistry = [];
-
-        for (const layer of handler.stack) {
-            const route = layer.route;
-            const extendedPath = route.path;
-            const method = route.stack[0].method;
-
-            const merged: RouteSchema = {
-                ...baseSchema,
-                method: method.toLowerCase(),
-                route_options: handler.routeOptions
-            };
-
-            const schemaURL = this.createRouteURL(
-                fileEntry.absolute_path,
-                merged.route_options,
-                (url) => {
-                    if (handler.routeOptions.isIndex) {
-                        const basename = path.basename(url);
-                        const base = ensureLeadingToken(basename, "/").replace(/\/$/, "");
-
-                        if (base !== this.options.appMount) {
-                            url = url.replace(base, "");
-                        }
-                    }
-
-                    url = this.paramsRegexReplacement(url, merged.route_options.paramsRegex);
-
-                    merged.base_path = url;
-
-                    if (extendedPath && extendedPath !== "/") {
-                        url += extendedPath;
-                        merged.extended_path = extendedPath;
-                    }
-
-                    return ensureLeadingToken(url, "/");
-                }
-            );
-
-            merged.full_path = schemaURL;
-
-            if (isFunction(modifier)) {
-                const modified = modifier(merged, handler.routeOptions);
-                schemas.push(modified);
-            } else {
-                schemas.push(merged);
-            }
-        }
-
-        return schemas;
-    }
-
-    /**
-     * Creates a route URL that is used to register
-     * the route to the Express application.
-     *
-     * @param absolutePath The absolute path to the route handler.
-     * @param routeOptions Any route options that were defined.
-     * @param modifier A function that modifies the route URL.
-     * @returns The route URL.
-     */
-    protected createRouteURL(
-        absolutePath: string,
-        routeOptions: RouterOptions,
-        modifier: RouteModifier<string, string>
-    ): string {
-        let routePath = removeFileExtension(absolutePath);
-
-        if (routeOptions.isIndex == null) {
-            for (const indexName of this.options.indexNames) {
-                const resolved = removeFileExtension(indexName);
-                const basename = path.basename(routePath);
-
-                if (basename === resolved) {
-                    routePath = path.dirname(routePath);
-                    break;
-                }
-            }
-        }
-
-        if (routePath.startsWith(this.$resolveDirectory)) {
-            routePath = routePath.replace(this.$resolveDirectory, "");
+        if (routePath.startsWith(this.$activeDirectory)) {
+            routePath = routePath.replace(this.$activeDirectory, "");
         }
 
         routePath = routePath.replace(/\\/g, "/");
@@ -424,44 +360,79 @@ class Engine {
             routePath = ensureLeadingToken(routePath, appMount);
         }
 
+        if (routerHandler.routeOptions.isIndex === null) {
+            for (const indexName of this.options.indexNames) {
+                const resolved = removeFileExtension(indexName);
+                const basename = path.basename(routePath);
+
+                if (basename === resolved) {
+                    routePath = path.dirname(routePath);
+                    break;
+                }
+            }
+        } else if (routerHandler.routeOptions.isIndex) {
+            const basename = path.basename(routePath);
+            const base = ensureLeadingToken(basename, "/").replace(/\/$/, "");
+
+            if (base !== this.options.appMount) {
+                routePath = routePath.replace(base, "");
+            }
+        }
+
         if (routePath.endsWith("/")) {
             routePath = routePath.replace(/\/$/, "");
         }
 
-        const modified = modifier(routePath, routeOptions);
-        return modified;
+        routePath = this.replaceParamsRegExp(routePath, routerHandler.routeOptions.paramsRegex);
+
+        return ensureLeadingToken(routePath, "/");
     }
 
     /**
-     * Attempts to replace any slug parameters with
-     * the provided regex pattern. Otherwise, the
-     * default Express parameter token is used.
+     * Uses the given route schema to register the route
+     * with the Express application. This uses the `beforeRegistration`
+     * hook to allow for any modifications to the route schema.
      *
-     * @param url The URL to replace the slugs in.
-     * @param paramsRegex The regex pattern to use.
-     * @returns The modified URL.
+     * Environmented based registration is also performed to determine
+     * if the route should be registered in the current environment.
+     *
+     * @param routerHandler The route handler.
+     * @param routerSchema The route schema.
      */
-    protected paramsRegexReplacement(url: string, paramsRegex: ParamsRegex): string {
-        if (isUndefined(paramsRegex)) {
-            return url;
+    protected useRouterSchema(routerHandler: RouterHandler, routerSchema: RouterSchema): void {
+        const hookRouteSchema = this.$options.beforeRegistration(routerSchema);
+
+        this.append(routerSchema);
+
+        if (!isObject(hookRouteSchema)) {
+            routerSchema.error = "The `beforeRegistration` hook returned an invalid value.";
+            routerSchema.status = "error";
+
+            debugOrThrowError(routerSchema.error, "red");
+
+            return;
         }
 
-        let modifiedUrl = url;
-        let match: RegExpMatchArray | null = null;
+        if (hookRouteSchema.route_options.skip) {
+            hookRouteSchema.status = "skipped";
+            hookRouteSchema.message = "Route was skipped by the `routeOptions.skip` flag";
 
-        while ((match = SLUG_REGEX.exec(url)) !== null) {
-            const [slug, name] = match;
+            return;
+        }
 
-            let regexReplacer = `${EXPRESS_PARAMS_TOKEN}${name}`;
+        this.environmentBasedRegistration(hookRouteSchema, (proceed) => {
+            const environment = getCurrentWorkingEnvironment();
 
-            if (paramsRegex[name]) {
-                regexReplacer += `(${paramsRegex[name]})`;
+            if (proceed) {
+                this.assignMiddleware(routerHandler, hookRouteSchema);
+
+                hookRouteSchema.status = "registered";
+                hookRouteSchema.message = `Route was registered successfully for ${environment}`;
+            } else {
+                hookRouteSchema.status = "skipped";
+                hookRouteSchema.message = `Route was skipped for ${environment}`;
             }
-
-            modifiedUrl = modifiedUrl.replace(slug, regexReplacer);
-        }
-
-        return modifiedUrl;
+        });
     }
 
     /**
@@ -469,21 +440,19 @@ class Engine {
      * and determines if the route should be registered in the
      * current environment.
      *
-     * @param routeSchema The route schema to check.
+     * @param RouterSchema The route schema to check.
      * @param callback The callback to invoke.
      */
-    protected environmentBaseRegistration(
-        routeSchema: RouteSchema,
+    protected environmentBasedRegistration(
+        routerSchema: RouterSchema,
         callback: (proceed: boolean) => void
     ): void {
-        const routeOptions = routeSchema.route_options;
-
-        if (isUndefined(routeOptions)) {
+        if (isUndefined(routerSchema.route_options)) {
             return callback(true);
         }
 
-        if (isArray(routeOptions.environments)) {
-            const proceed = routeOptions.environments.some((env) => {
+        if (isArray(routerSchema.route_options.environments)) {
+            const proceed = routerSchema.route_options.environments.some((env) => {
                 return env === WILD_CARD_TOKEN || env === getCurrentWorkingEnvironment();
             });
 
@@ -506,7 +475,7 @@ class Engine {
                 for (const filePath of directories) {
                     const resolved = this.resolveFilePath(filePath);
 
-                    if (routeSchema.absolute_path.startsWith(resolved)) {
+                    if (routerSchema.absolute_path.startsWith(resolved)) {
                         if (proceed === false || proceed === null) {
                             proceed = nodeEnv === getCurrentWorkingEnvironment();
                         }
@@ -530,108 +499,90 @@ class Engine {
      * @param route The route schema.
      * @param handler The route handler.
      */
-    protected useRouteHandlerMiddleware(route: RouteSchema, handler: RouteHandler): void {
-        if (this.$options.customMiddleware) {
-            this.$app.use.call(
-                this.$app,
-                route.full_path,
-                this.$options.customMiddleware(route, handler)
-            );
-            return;
-        }
-
+    protected assignMiddleware(routerHandler: RouterHandler, routeSchema: RouterSchema): void {
+        // if (this.$options.customMiddleware) {
+        //     this.$app.use.call(
+        //         this.$app,
+        //         route.full_path,
+        //         this.$options.customMiddleware(route, handler)
+        //     );
+        //     return;
+        // }
         // const useMiddleware: RouteHandlerMiddleware = (req, res, next) => {
         //     console.log("request received");
         //     req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-
         //     handler.call(this.$app, req, res, next);
         // };
-
-        // this.$app.use.bind(this.$app, route.full_path, useMiddleware);
-
+        // console.log(handler);
+        // // need to figure instead use the method
+        // this.$app.use.call(this.$app, handler.bind(this.$app));
         // this.$app.use.call(this.$app, route.full_path, (req, res, next) => {
         //     console.log("request received");
         //     // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-
         //     handler.call(this.$app, req, res, next);
         // });
+        // this.$app[route.method].call(
+        //     this.$app,
+        //     route.full_path,
+        //     (req: Request, res: Response, next: NextFunction) => {
+        //         console.log("request received");
+        //         res.send("hello world");
+        //         // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+        //         // handler.call(this.$app, req, res, next);
+        //     }
+        // );
 
-        this.$app[route.method].call(
-            this.$app,
-            route.full_path,
-            (req: Request, res: Response, next: NextFunction) => {
-                console.log("request received");
+        const middleware: ExpressMiddleware = (req, res, next) => {
+            console.log("request received");
 
-                res.send("hello world");
-                // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
+            req.routeMetadata =
+                routeSchema.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
 
-                // handler.call(this.$app, req, res, next);
-            }
-        );
+            routerHandler.call(this.$app, req, res, next);
+        };
+
+        this.$app.use.call(this.$app, routeSchema.base_path, middleware);
     }
 
     /**
-     * Binds the available routes to the Express application
-     * and performs environment based checking.
+     * Attempts to replace any slug parameters with
+     * the provided regex pattern. Otherwise, the
+     * default Express parameter token is used.
      *
-     * @param routes The routes to bind.
-     * @param handler The route handler to bind.
+     * @param url The URL to replace the slugs in.
+     * @param paramsRegex The regex pattern to use.
+     * @returns The modified URL.
      */
-    protected bindRoutes(routes: RouteRegistry, handler: RouteHandler): void {
-        for (let [index, route] of routes.entries()) {
-            const hookRoute = this.$options.beforeRegistration(route);
-
-            if (!isObject(hookRoute)) {
-                route.error = "The `beforeRegistration` hook returned an invalid value.";
-                route.status = "error";
-
-                debugOrThrowError(route.error, "red");
-
-                continue;
-            } else {
-                route = hookRoute;
-            }
-
-            const routeOptions = route.route_options;
-
-            if (routeOptions.skip) {
-                route.status = "skipped";
-                route.message = "Route was skipped by the `routeOptions.skip` flag";
-
-                continue;
-            }
-
-            this.environmentBaseRegistration(route, (proceed) => {
-                const environment = getCurrentWorkingEnvironment();
-
-                if (proceed) {
-                    this.useRouteHandlerMiddleware(route, handler);
-
-                    route.status = "registered";
-                    route.message = `Route was registered successfully for ${environment}`;
-                } else {
-                    route.status = "skipped";
-                    route.message = `Route was skipped for ${environment}`;
-                }
-
-                if (route) {
-                    routes[index] = route;
-                }
-            });
+    protected replaceParamsRegExp(url: string, paramsRegex: ParamsRegex): string {
+        if (isUndefined(paramsRegex)) {
+            return url;
         }
 
-        this.appendToRegistry(routes);
+        let modifiedUrl = url;
+        let match: RegExpMatchArray | null = null;
+
+        while ((match = SLUG_REGEX.exec(url)) !== null) {
+            const [slug, name] = match;
+
+            let regexReplacer = `${EXPRESS_PARAMS_TOKEN}${name}`;
+
+            if (paramsRegex[name]) {
+                regexReplacer += `(${paramsRegex[name]})`;
+            }
+
+            modifiedUrl = modifiedUrl.replace(slug, regexReplacer);
+        }
+
+        return modifiedUrl;
     }
 
     /**
-     * Appends the given routes to the internal route registry.
+     * Appends the newly made route schema to the registry.
      *
-     * @param routes The routes to append.
+     * @param routerSchema The route schema to append.
      */
-    protected appendToRegistry(routes: RouteRegistry): void {
-        for (const route of routes) {
-            this.$routeRegistry.push(route);
-        }
+    protected append(routerSchema: RouterSchema): void {
+        this.$registry.push(routerSchema);
     }
 }
 
@@ -665,34 +616,37 @@ export class RouteEngine extends Engine {
     /**
      * Registers all available routes within a given directory.
      */
-    public async registerRoutes(): Promise<RouteRegistry> {
+    public async registerRoutes(): Promise<RouterRegistry> {
         try {
-            this.$routeRegistry = [];
+            this.$registry = [];
 
-            const directory = this.$resolveDirectory;
+            const directory = this.$activeDirectory;
             const tree = await createDirectoryTree(directory, this.onFile.bind(this));
 
             const output = this.options.output;
             const registry = this.registry;
 
             if (isString(output) && output.length) {
-                const redactFilePaths = this.options.redactOutputFilePaths;
+                const localOutput = new LocalFileSave(output);
 
-                Output.ensureOutputDir(output, () => {
-                    return [
-                        {
-                            data: Redact.routeRegistry(registry, redactFilePaths),
-                            fileName: "route_registry.json"
-                        },
-                        {
-                            data: Redact.routeTree(tree, redactFilePaths),
-                            fileName: "route_tree.json"
-                        }
-                    ];
-                });
+                localOutput.save(
+                    {
+                        json: tree,
+                        fileName: "route_tree.json"
+                    },
+                    initRedactFn(this.options.redactOutputFilePaths, "tree-node")
+                );
+
+                localOutput.save(
+                    {
+                        json: registry,
+                        fileName: "route_registry.json"
+                    },
+                    initRedactFn(this.options.redactOutputFilePaths, "router-registry")
+                );
             }
 
-            return Promise.resolve(this.registry);
+            return registry;
         } catch (error) {
             debugOrThrowError(error, "red");
         }
