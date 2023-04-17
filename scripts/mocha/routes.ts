@@ -1,6 +1,6 @@
 import type { GenerateRoutes } from "./types";
 
-import { withDefault, withError, withParams } from "./templates";
+import { withDefault, withError, withMetadata, withParams } from "./templates";
 import { join } from "./utils";
 
 export const MOCHA_ROUTES: GenerateRoutes[] = [
@@ -114,7 +114,8 @@ export const MOCHA_ROUTES: GenerateRoutes[] = [
       metadata: {
         my_custom_metadata: "my_custom_metadata"
       }
-    }
+    },
+    template: withMetadata
   },
   {
     absolute: join("params", "[param_one]", "[param_two].ts"),
