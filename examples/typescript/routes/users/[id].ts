@@ -7,13 +7,13 @@ import { getUsers } from "../../controllers/get-users";
 const router = express.Router({ mergeParams: true });
 
 router.get("/", getUsers(), async (req, res) => {
-    const id = req.params.id;
+  const id = req.params.id;
 
-    const user = req.users.find((user) => {
-        return user.id === id;
-    });
+  const user = req.users.find((user) => {
+    return user.id === id;
+  });
 
-    res.json(user);
+  res.json(user);
 });
 
 // get user avatar
@@ -33,7 +33,7 @@ router.delete("/", async (req, res) => {});
 
 export default router;
 export const routeOptions: RouterOptions = {
-    paramsRegex: {
-        id: /user_[0-9]+/
-    }
+  paramsRegex: {
+    id: /user_[0-9]+/
+  }
 };

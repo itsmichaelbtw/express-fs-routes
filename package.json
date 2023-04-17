@@ -1,109 +1,110 @@
 {
-    "name": "express-fs-routes",
-    "version": "2.2.1",
-    "description": "Automatically create Express routes with one line of code using the file system. No more hard coding routes into your project's main file.",
-    "main": "dist/common/fs-routes.cjs.js",
-    "module": "dist/module/fs-routes.esm.js",
-    "types": "dist/types/index.d.ts",
-    "type": "module",
-    "exports": {
-        ".": {
-            "require": "./dist/common/fs-routes.cjs.js",
-            "import": "./dist/module/fs-routes.esm.js"
-        }
-    },
-    "files": [
-        "dist",
-        "lib",
-        "examples",
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE",
-        "package.json",
-        "tsconfig.json",
-        "types",
-        "index.d.ts"
-    ],
+  "name": "express-fs-routes",
+  "version": "2.2.1",
+  "description": "Automatically create Express routes with one line of code using the file system. No more hard coding routes into your project's main file.",
+  "main": "dist/common/fs-routes.cjs.js",
+  "module": "dist/module/fs-routes.esm.js",
+  "types": "dist/types/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "require": "./dist/common/fs-routes.cjs.js",
+      "import": "./dist/module/fs-routes.esm.js"
+    }
+  },
+  "files": [
+    "dist",
+    "lib",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "package.json",
+    "tsconfig.json",
+    "types",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "start": "nodemon --exec \"npm run server\"",
+    "test": "ts-mocha -p tsconfig.mocha.json --recursive test/**/*.test.ts",
+    "build": "rimraf dist && tsc -p tsconfig.dec.json && rollup -c -m rollup.config.js --bundleConfigAsCjs && ts-node scripts/build.ts",
+    "ts": "ts-node",
+    "examples:commonjs": "node examples/commonjs/app.js",
+    "examples:module": "node examples/module/app.js",
+    "examples:typescript": "ts-node examples/typescript/app.ts --project examples/typescript/tsconfig.json",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write .",
+    "release:patch": "npm run release -- --release-as patch",
+    "release:minor": "npm run release -- --release-as minor",
+    "release:major": "npm run release -- --release-as major",
+    "release": "npm run build && standard-version -a",
+    "push:tags": "git push --follow-tags origin main",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itsmichaelbtw/express-fs-routes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/itsmichaelbtw/express-fs-routes/issues"
+  },
+  "homepage": "https://github.com/itsmichaelbtw/express-fs-routes#readme",
+  "keywords": [
+    "nodejs",
+    "expressjs",
+    "typescript",
+    "routing",
+    "api"
+  ],
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.21.4",
+    "@commitlint/cli": "^17.6.1",
+    "@commitlint/config-conventional": "^17.6.1",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.2",
+    "@rollup/plugin-typescript": "^11.1.0",
+    "@types/chai": "^4.3.4",
+    "@types/express": "^4.17.17",
+    "@types/fs-extra": "^11.0.1",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.15.11",
+    "@types/supertest": "^2.0.12",
+    "chai": "^4.3.7",
+    "env-agent": "^2.5.1",
+    "fs-extra": "^11.1.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.1",
+    "mocha": "^10.2.0",
+    "nodemon": "^2.0.22",
+    "prettier": "^2.8.7",
+    "rimraf": "^5.0.0",
+    "rollup": "^3.20.3",
+    "rollup-plugin-auto-external": "^2.0.0",
+    "standard-version": "^9.5.0",
+    "supertest": "^6.3.3",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "peerDependencies": {
+    "express": "^4.18.2"
+  },
+  "standard-version": {
     "scripts": {
-        "start": "nodemon --exec \"npm run server\"",
-        "test": "ts-mocha -p tsconfig.mocha.json --recursive test/**/*.test.ts",
-        "build": "rimraf dist && tsc -p tsconfig.dec.json && rollup -c -m rollup.config.js --bundleConfigAsCjs && ts-node scripts/build.ts",
-        "ts": "ts-node",
-        "examples:commonjs": "node examples/commonjs/app.js",
-        "examples:module": "node examples/module/app.js",
-        "examples:typescript": "ts-node examples/typescript/app.ts --project examples/typescript/tsconfig.json",
-        "prettier:check": "prettier --check .",
-        "prettier:write": "prettier --write .",
-        "release:patch": "npm run release -- --release-as patch",
-        "release:minor": "npm run release -- --release-as minor",
-        "release:major": "npm run release -- --release-as major",
-        "release": "npm run build && standard-version -a",
-        "push:tags": "git push --follow-tags origin main"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/itsmichaelbtw/express-fs-routes.git"
-    },
-    "bugs": {
-        "url": "https://github.com/itsmichaelbtw/express-fs-routes/issues"
-    },
-    "homepage": "https://github.com/itsmichaelbtw/express-fs-routes#readme",
-    "keywords": [
-        "nodejs",
-        "expressjs",
-        "typescript",
-        "routing",
-        "api"
-    ],
-    "devDependencies": {
-        "@babel/preset-typescript": "^7.21.4",
-        "@commitlint/cli": "^17.5.1",
-        "@commitlint/config-conventional": "^17.4.4",
-        "@rollup/plugin-babel": "^6.0.3",
-        "@rollup/plugin-commonjs": "^24.0.1",
-        "@rollup/plugin-json": "^6.0.0",
-        "@rollup/plugin-node-resolve": "^15.0.2",
-        "@rollup/plugin-typescript": "^11.1.0",
-        "@types/chai": "^4.3.4",
-        "@types/express": "^4.17.17",
-        "@types/fs-extra": "^11.0.1",
-        "@types/mocha": "^10.0.1",
-        "@types/node": "^18.15.11",
-        "@types/supertest": "^2.0.12",
-        "chai": "^4.3.7",
-        "env-agent": "^2.5.1",
-        "fs-extra": "^11.1.1",
-        "husky": "^8.0.3",
-        "lint-staged": "^13.2.0",
-        "mocha": "^10.2.0",
-        "nodemon": "^2.0.22",
-        "prettier": "^2.8.7",
-        "rimraf": "^4.4.1",
-        "rollup": "^3.20.2",
-        "rollup-plugin-auto-external": "^2.0.0",
-        "standard-version": "^9.5.0",
-        "supertest": "^6.3.3",
-        "ts-mocha": "^10.0.0",
-        "ts-node": "^10.9.1",
-        "typescript": "^5.0.3"
-    },
-    "peerDependencies": {
-        "express": "^4.18.2"
-    },
-    "standard-version": {
-        "scripts": {
-            "prerelease": "git add dist",
-            "posttag": "npm run push:tags"
-        }
-    },
-    "lint-staged": {
-        "*.ts": [
-            "prettier --write"
-        ]
-    },
-    "author": "Orison Networks",
-    "contributors": [
-        "Michael Cizek <itsmichaelbtw@gmail.com>"
-    ],
-    "license": "MIT"
+      "prerelease": "git add dist",
+      "posttag": "npm run push:tags"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write"
+    ]
+  },
+  "author": "Orison Networks",
+  "contributors": [
+    "Michael Cizek <itsmichaelbtw@gmail.com>"
+  ],
+  "license": "MIT"
 }

@@ -9,17 +9,17 @@ const port = 3000;
 const fsRoutes = new RouteEngine(app, "commonjs");
 
 fsRoutes.setOptions({
-    directory: path.join(__dirname, "routes"),
-    output: path.join(__dirname, ".fs-routes"),
-    redactOutputFilePaths: true
+  directory: path.join(__dirname, "routes"),
+  output: path.join(__dirname, ".fs-routes"),
+  redactOutputFilePaths: true
 });
 
 async function startApp() {
-    await fsRoutes.registerRoutes();
+  await fsRoutes.registerRoutes();
 
-    app.listen(port, () => {
-        console.log(`CommonJS Example app listening at http://localhost:${port}`);
-    });
+  app.listen(port, () => {
+    console.log(`CommonJS Example app listening at http://localhost:${port}`);
+  });
 }
 
 startApp();

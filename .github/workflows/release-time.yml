@@ -3,7 +3,7 @@ name: Release Time
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   tests:

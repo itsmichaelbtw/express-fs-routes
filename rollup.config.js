@@ -16,50 +16,50 @@ const banner = `/**
 const input = "lib/index.ts";
 
 function create(config) {
-    return {
-        input: config.input || input,
-        output: {
-            ...config.output,
-            banner: banner
-        },
-        plugins: [
-            resolve({
-                extensions: extensions,
-                preferBuiltins: true
-            }),
-            babel({
-                babelHelpers: "bundled",
-                include: ["lib/**/*.ts", "index.ts"],
-                extensions: extensions,
-                exclude: ["node_modules/**", "test/**"],
-                presets: ["@babel/preset-typescript"]
-            }),
-            autoExternal()
-        ].concat(config.plugins ?? [])
-    };
+  return {
+    input: config.input || input,
+    output: {
+      ...config.output,
+      banner: banner
+    },
+    plugins: [
+      resolve({
+        extensions: extensions,
+        preferBuiltins: true
+      }),
+      babel({
+        babelHelpers: "bundled",
+        include: ["lib/**/*.ts", "index.ts"],
+        extensions: extensions,
+        exclude: ["node_modules/**", "test/**"],
+        presets: ["@babel/preset-typescript"]
+      }),
+      autoExternal()
+    ].concat(config.plugins ?? [])
+  };
 }
 
 const cjs = create({
-    output: {
-        file: packageJson.main,
-        format: "cjs",
-        exports: "named",
-        generatedCode: {
-            constBindings: true
-        }
-    },
-    plugins: [commonjs()]
+  output: {
+    file: packageJson.main,
+    format: "cjs",
+    exports: "named",
+    generatedCode: {
+      constBindings: true
+    }
+  },
+  plugins: [commonjs()]
 });
 
 const esm = create({
-    output: {
-        file: packageJson.module,
-        format: "es",
-        exports: "named",
-        generatedCode: {
-            constBindings: true
-        }
+  output: {
+    file: packageJson.module,
+    format: "es",
+    exports: "named",
+    generatedCode: {
+      constBindings: true
     }
+  }
 });
 
 export default [cjs, esm];

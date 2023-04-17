@@ -3,9 +3,9 @@
 import express from "express";
 const router = express.Router({ mergeParams: true });
 router.get("/", (req, res) => {
-    res.status(200).send(req.params);
+  res.status(200).send(req.params);
 });
 export default router;
 export const routeOptions = {
-    paramsRegex: { param_one: "param_one_[a-zA-Z0-9]+", param_two: "param_two_[a-zA-Z0-9]+" }
+  paramsRegex: { param_one: "param_one_[a-zA-Z0-9]+", param_two: "param_two_[a-zA-Z0-9]+" }
 };

@@ -1,6 +1,6 @@
 declare namespace Express {
-    interface Request {
-        posts: any[];
-        users: any[];
-    }
+  interface Request {
+    posts: any[];
+    users: any[];
+  }
 }

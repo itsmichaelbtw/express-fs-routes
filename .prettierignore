@@ -1,5 +1,3 @@
-*.json
 *.txt
 *.md
-*.yml
 dist

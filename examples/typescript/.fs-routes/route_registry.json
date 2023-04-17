@@ -37,11 +37,7 @@
       "skip": false,
       "paramsRegex": {},
       "metadata": {
-        "title": [
-          1,
-          2,
-          3
-        ],
+        "title": [1, 2, 3],
         "description": "This is a description"
       }
     },

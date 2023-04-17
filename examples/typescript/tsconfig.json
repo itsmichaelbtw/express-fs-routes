@@ -1,13 +1,13 @@
 {
-    "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declarationDir": "dist"
+  },
+  "ts-node": {
     "compilerOptions": {
-        "declarationDir": "dist"
-    },
-    "ts-node": {
-        "compilerOptions": {
-            "module": "CommonJS"
-        }
-    },
-    "include": ["routes", "controllers"],
-    "files": ["express.d.ts", "../../index.d.ts"]
+      "module": "CommonJS"
+    }
+  },
+  "include": ["routes", "controllers"],
+  "files": ["express.d.ts", "../../index.d.ts"]
 }

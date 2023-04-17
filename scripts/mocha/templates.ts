@@ -1,7 +1,7 @@
 import { minify, enforceComment } from "./utils";
 
 export function withDefault(append = ""): string {
-    const minified = minify(`
+  const minified = minify(`
         import express from "express";
 
         const router = express.Router({ mergeParams: true });
@@ -15,11 +15,11 @@ export function withDefault(append = ""): string {
         ${append}
     `);
 
-    return enforceComment(minified);
+  return enforceComment(minified);
 }
 
 export function withParams(append = ""): string {
-    const minified = minify(`
+  const minified = minify(`
         import express from "express";
 
         const router = express.Router({ mergeParams: true });
@@ -33,11 +33,11 @@ export function withParams(append = ""): string {
         ${append}
     `);
 
-    return enforceComment(minified);
+  return enforceComment(minified);
 }
 
 export function withError(): string {
-    const minified = minify(`
+  const minified = minify(`
         import express from "express";
 
         const router = express.Router({ mergeParams: true });
@@ -47,5 +47,5 @@ export function withError(): string {
         });
     `);
 
-    return enforceComment(minified);
+  return enforceComment(minified);
 }

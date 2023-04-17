@@ -3,9 +3,9 @@
 import express from "express";
 const router = express.Router({ mergeParams: true });
 router.get("/", (req, res) => {
-    res.status(200).send(req.originalUrl);
+  res.status(200).send(req.originalUrl);
 });
 export default router;
 export const routeOptions = {
-    paramsRegex: { nested: "nested_[a-zA-Z0-9]+", regex: "regex_[a-zA-Z0-9]+" }
+  paramsRegex: { nested: "nested_[a-zA-Z0-9]+", regex: "regex_[a-zA-Z0-9]+" }
 };

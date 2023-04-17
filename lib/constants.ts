@@ -7,20 +7,20 @@ export const CURRENT_ENVIRONMENT = process.env.NODE_ENV || "development";
 export const OUTPUT_DIRECTORY = ".fs-routes";
 
 export const DEFAULT_OPTIONS: RouteRegistrationOptions = {
-    directory: "routes",
-    appMount: "",
-    indexNames: ["index.js"],
-    output: OUTPUT_DIRECTORY,
-    silent: false,
-    environmentRoutes: undefined,
-    redactOutputFilePaths: false,
-    beforeRegistration: (route) => route
+  directory: "routes",
+  appMount: "",
+  indexNames: ["index.js"],
+  output: OUTPUT_DIRECTORY,
+  silent: false,
+  environmentRoutes: undefined,
+  redactOutputFilePaths: false,
+  beforeRegistration: (route) => route
 };
 
 export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
-    environments: null,
-    isIndex: null,
-    skip: false,
-    paramsRegex: {},
-    metadata: {}
+  environments: null,
+  isIndex: null,
+  skip: false,
+  paramsRegex: {},
+  metadata: {}
 };

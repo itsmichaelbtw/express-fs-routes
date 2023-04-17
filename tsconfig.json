@@ -1,22 +1,22 @@
 {
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ES2015",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "declaration": true,
+    "resolveJsonModule": true
+  },
+  "ts-node": {
+    "esm": true,
     "compilerOptions": {
-        "lib": ["ESNext"],
-        "target": "ES2015",
-        "module": "ESNext",
-        "moduleResolution": "Node",
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "allowJs": true,
-        "declaration": true,
-        "resolveJsonModule": true
-    },
-    "ts-node": {
-        "esm": true,
-        "compilerOptions": {
-            "module": "ES2020"
-        }
-    },
-    "include": ["lib", "scripts"],
-    "files": ["index.d.ts"],
-    "exclude": ["test", "node_modules", "dist"]
+      "module": "ES2020"
+    }
+  },
+  "include": ["lib", "scripts"],
+  "files": ["index.d.ts"],
+  "exclude": ["test", "node_modules", "dist"]
 }
