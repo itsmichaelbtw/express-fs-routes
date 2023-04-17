@@ -24,3 +24,7 @@ export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
   paramsRegex: {},
   metadata: {}
 };
+
+export const TREE_NODE_FILENAME = "tree-node.json";
+export const REGISTRY_FILENAME = "route-registry.json";
+export const REDACT_TOKEN = "...";

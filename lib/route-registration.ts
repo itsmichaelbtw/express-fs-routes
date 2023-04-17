@@ -34,7 +34,9 @@ import {
   EXPRESS_PARAMS_TOKEN,
   WILD_CARD_TOKEN,
   SLUG_REGEX,
-  OUTPUT_DIRECTORY
+  OUTPUT_DIRECTORY,
+  TREE_NODE_FILENAME,
+  REGISTRY_FILENAME
 } from "./constants";
 import { parseRouteRegistrationOptions, parseRouterHandlerOptions } from "./parse-options";
 import { debug, DebugColors } from "./debug";
@@ -624,7 +626,7 @@ export class RouteEngine extends Engine {
         localOutput.save(
           {
             json: tree,
-            fileName: "route_tree.json"
+            fileName: TREE_NODE_FILENAME
           },
           initRedactFn(this.options.redactOutputFilePaths, "tree-node")
         );
@@ -632,7 +634,7 @@ export class RouteEngine extends Engine {
         localOutput.save(
           {
             json: registry,
-            fileName: "route_registry.json"
+            fileName: REGISTRY_FILENAME
           },
           initRedactFn(this.options.redactOutputFilePaths, "router-registry")
         );

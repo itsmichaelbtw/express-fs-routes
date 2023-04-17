@@ -6,6 +6,8 @@ import path from "path";
 import { debug } from "./debug";
 import { isArray } from "./utils";
 
+import { REDACT_TOKEN } from "./constants";
+
 type JSONType = "router-registry" | "tree-node";
 type File = RouterRegistry | TreeNode;
 
@@ -57,7 +59,7 @@ export function initRedactFn<T = File>(redact: boolean, jsonType: JSONType): Red
         return typeCast.map((entry) => {
           return {
             ...entry,
-            absolute_path: "..."
+            absolute_path: REDACT_TOKEN
           };
         }) as unknown as T;
       }
@@ -67,7 +69,7 @@ export function initRedactFn<T = File>(redact: boolean, jsonType: JSONType): Red
 
         const updatedNode = {
           ...typeCast,
-          absolute_path: "..."
+          absolute_path: REDACT_TOKEN
         };
 
         if (isArray(typeCast.children)) {
