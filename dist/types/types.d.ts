@@ -294,6 +294,19 @@ export interface RouteRegistrationOptions {
      */
     beforeRegistration?(route: RouterSchema): RouterSchema;
     /**
+     * Intercept the layer stack that is registered to the Express app and provided
+     * your own custom handler for a given path. You can either return a
+     * new handler, or the original handler.
+     *
+     * @param layer The layer that is registered to the Express app.
+     * @param handle The handle that is registered to the Express app.
+     * @param currentIdx The current index of the layer stack.
+     * @param stackSize The total size of the layer stack.
+     *
+     * @returns The middleware that will be registered to the Express app.
+     */
+    interceptLayerStack?(layer: RouterLayer, handle: ExpressMiddleware, currentIdx: number, stackSize: number): ExpressMiddleware;
+    /**
      * Manage the middleware that is responsible for calling the route handler. By
      * providing this value, you are required to call the route handler yourself
      * and assign the route metadata to the request object.
@@ -317,11 +330,5 @@ export interface RouteRegistrationOptions {
      * ```
      */
     customMiddleware?(route: RouterSchema, handler: RouterHandler): ExpressMiddleware;
-    /**
-     * Intercept the layer that is registered to the Express app and provided
-     * your own custom handler for a given path. You can either return a
-     * new handler, or the original handler.
-     */
-    interceptLayer?(layer: RouterLayer): RouterLayer;
 }
 export {};

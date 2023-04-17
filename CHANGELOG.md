@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.2.1...v2.3.0) (2023-04-17)
+
+
+### Fixed
+
+* build script throwing errors with ts-node ([2da4839](https://github.com/itsmichaelbtw/express-fs-routes/commit/2da4839c08e1f9771fe4a01f366feee3afd102d7))
+
+
+### What's New
+
+* generic type for `RouterOptions` ([f926f82](https://github.com/itsmichaelbtw/express-fs-routes/commit/f926f829871dfc7fcbbb4c32bfbbd320022f796f))
+* improved registration behaviour ([f119acf](https://github.com/itsmichaelbtw/express-fs-routes/commit/f119acfb636b49cf957dbed1a6f0ef44db4dcf17))
+* new `interceptLayerStack` method ([8c5b969](https://github.com/itsmichaelbtw/express-fs-routes/commit/8c5b969e15b31dc8e3e9e0e5b8fccd1b684b096b))
+* new generation scripts for mocha unit tests ([e00729f](https://github.com/itsmichaelbtw/express-fs-routes/commit/e00729fab33859028fafbdd08e30089af9cd7813))
+* new local file save class ([930f23e](https://github.com/itsmichaelbtw/express-fs-routes/commit/930f23ea0ef90c3486540a6ad99f8189a863958d))
+* readvised type interfaces ([a462e0c](https://github.com/itsmichaelbtw/express-fs-routes/commit/a462e0ce575841182d70bf482863fe2d0978bc78))
+
 ### [2.2.1](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.2.0...v2.2.1) (2023-04-05)
 
 

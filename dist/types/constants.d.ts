@@ -6,3 +6,6 @@ export declare const CURRENT_ENVIRONMENT: string;
 export declare const OUTPUT_DIRECTORY = ".fs-routes";
 export declare const DEFAULT_OPTIONS: RouteRegistrationOptions;
 export declare const DEFAULT_ROUTE_OPTIONS: RouterOptions;
+export declare const TREE_NODE_FILENAME = "tree-node.json";
+export declare const REGISTRY_FILENAME = "route-registry.json";
+export declare const REDACT_TOKEN = "...";

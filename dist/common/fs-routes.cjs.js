@@ -131,6 +131,32 @@ function debug(message, color) {
   console.log(colorizedMessage);
 }
 
+const SLUG_REGEX = /\[(.*?)\]/gi;
+const EXPRESS_PARAMS_TOKEN = ":";
+const WILD_CARD_TOKEN = "*";
+process.env.NODE_ENV || "development";
+const OUTPUT_DIRECTORY = ".fs-routes";
+const DEFAULT_OPTIONS = {
+  directory: "routes",
+  appMount: "",
+  indexNames: ["index.js"],
+  output: OUTPUT_DIRECTORY,
+  silent: false,
+  environmentRoutes: undefined,
+  redactOutputFilePaths: false,
+  beforeRegistration: route => route
+};
+const DEFAULT_ROUTE_OPTIONS = {
+  environments: null,
+  isIndex: null,
+  skip: false,
+  paramsRegex: {},
+  metadata: {}
+};
+const TREE_NODE_FILENAME = "tree-node.json";
+const REGISTRY_FILENAME = "route-registry.json";
+const REDACT_TOKEN = "...";
+
 class LocalFileSave {
   constructor(directory) {
     this.directory = directory;
@@ -163,7 +189,7 @@ function initRedactFn(redact, jsonType) {
           return typeCast.map(entry => {
             return {
               ...entry,
-              absolute_path: "..."
+              absolute_path: REDACT_TOKEN
             };
           });
         }
@@ -172,7 +198,7 @@ function initRedactFn(redact, jsonType) {
           const typeCast = json;
           const updatedNode = {
             ...typeCast,
-            absolute_path: "..."
+            absolute_path: REDACT_TOKEN
           };
           if (isArray(typeCast.children)) {
             updatedNode.children = typeCast.children.map(child => {
@@ -184,29 +210,6 @@ function initRedactFn(redact, jsonType) {
     }
   };
 }
-
-const SLUG_REGEX = /\[(.*?)\]/gi;
-const EXPRESS_PARAMS_TOKEN = ":";
-const WILD_CARD_TOKEN = "*";
-process.env.NODE_ENV || "development";
-const OUTPUT_DIRECTORY = ".fs-routes";
-const DEFAULT_OPTIONS = {
-  directory: "routes",
-  appMount: "",
-  indexNames: ["index.js"],
-  output: OUTPUT_DIRECTORY,
-  silent: false,
-  environmentRoutes: undefined,
-  redactOutputFilePaths: false,
-  beforeRegistration: route => route
-};
-const DEFAULT_ROUTE_OPTIONS = {
-  environments: null,
-  isIndex: null,
-  skip: false,
-  paramsRegex: {},
-  metadata: {}
-};
 
 function parseRouteRegistrationOptions(options) {
   if (!isObject(options)) {
@@ -489,6 +492,14 @@ class Engine {
         extended_path: path,
         complete_path: completePath
       };
+      if (this.$options.interceptLayerStack) {
+        for (const [index, middleware] of stack.entries()) {
+          const newHandler = this.$options.interceptLayerStack(routerLayer, middleware.handle, index, routerLayer.middleware_count);
+          if (isFunction(newHandler)) {
+            stack[index].handle = newHandler;
+          }
+        }
+      }
       layers.push(routerLayer);
     }
     baseSchema.layers = layers;
@@ -632,40 +643,13 @@ class Engine {
    * @param handler The route handler.
    */
   assignMiddleware(routerHandler, routeSchema) {
-    // if (this.$options.customMiddleware) {
-    //     this.$app.use.call(
-    //         this.$app,
-    //         route.full_path,
-    //         this.$options.customMiddleware(route, handler)
-    //     );
-    //     return;
-    // }
-    // const useMiddleware: RouteHandlerMiddleware = (req, res, next) => {
-    //     console.log("request received");
-    //     req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-    //     handler.call(this.$app, req, res, next);
-    // };
-    // console.log(handler);
-    // // need to figure instead use the method
-    // this.$app.use.call(this.$app, handler.bind(this.$app));
-    // this.$app.use.call(this.$app, route.full_path, (req, res, next) => {
-    //     console.log("request received");
-    //     // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-    //     handler.call(this.$app, req, res, next);
-    // });
-    // this.$app[route.method].call(
-    //     this.$app,
-    //     route.full_path,
-    //     (req: Request, res: Response, next: NextFunction) => {
-    //         console.log("request received");
-    //         res.send("hello world");
-    //         // req.routeMetadata = route.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-    //         // handler.call(this.$app, req, res, next);
-    //     }
-    // );
+    // fix double call when using / as base path
 
+    if (this.$options.customMiddleware) {
+      this.$app.use.call(this.$app, routeSchema.base_path, this.$options.customMiddleware(routeSchema, routerHandler));
+      return;
+    }
     const middleware = (req, res, next) => {
-      console.log("request received");
       req.routeMetadata = routeSchema.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
       routerHandler.call(this.$app, req, res, next);
     };
@@ -749,11 +733,11 @@ class RouteEngine extends Engine {
         const localOutput = new LocalFileSave(output);
         localOutput.save({
           json: tree,
-          fileName: "route_tree.json"
+          fileName: TREE_NODE_FILENAME
         }, initRedactFn(this.options.redactOutputFilePaths, "tree-node"));
         localOutput.save({
           json: registry,
-          fileName: "route_registry.json"
+          fileName: REGISTRY_FILENAME
         }, initRedactFn(this.options.redactOutputFilePaths, "router-registry"));
       }
       return registry;
