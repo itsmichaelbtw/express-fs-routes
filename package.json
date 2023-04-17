@@ -26,9 +26,9 @@
   ],
   "scripts": {
     "start": "nodemon --exec \"npm run server\"",
-    "test": "ts-mocha -p tsconfig.mocha.json --recursive test/**/*.test.ts",
+    "test": "ts-mocha --recursive ./test/**/*.test.ts -p ./tsconfig.mocha.json",
     "build": "rimraf dist && tsc -p tsconfig.dec.json && rollup -c -m rollup.config.js --bundleConfigAsCjs && ts-node scripts/build.ts",
-    "ts": "ts-node",
+    "ts": "node --experimental-specifier-resolution=node --loader ts-node/esm",
     "examples:commonjs": "node examples/commonjs/app.js",
     "examples:module": "node examples/module/app.js",
     "examples:typescript": "ts-node examples/typescript/app.ts --project examples/typescript/tsconfig.json",

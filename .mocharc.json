@@ -1,0 +1,7 @@
+{
+  "project": "./tsconfig.mocha.json",
+  "exit": true,
+  "extensions": ["ts"],
+  "file": ["./scripts/mocha/hooks.ts"],
+  "timeout": 15000
+}
