@@ -506,17 +506,62 @@ export interface RouteRegistrationOptions {
     silent?: boolean;
 
     /**
-     * A function that is called before a route undergoes registration. This
-     * is called before environment based checks are performed, and before the route
-     * is conditionally checked for registration. Any changes made to the route
-     * object will be reflected in the registration process and the file output.
-     *
-     * **This is not middleware**. This will only be called once per route and won't
-     * be called for each request.
-     *
-     * @param route
-     */
-    beforeRegistration?(route: RouteSchema): RouteSchema;
+    * A function that is called before a route undergoes registration. This
+    * is called before environment based checks are performed, and before the route
+    * is conditionally checked for registration. Any changes made to the route
+    * object will be reflected in the registration process and the file output.
+    *
+    * **This is not middleware**. This will only be called once per route and won't
+    * be called for each request.
+    *
+    * @param route;
+    * @returns The route schema object.
+    */
+    beforeRegistration?(route: RouterSchema): RouterSchema;
+
+    /**
+    * Intercept the layer stack that is registered to the Express app and provided
+    * your own custom handler for a given path. You can either return a
+    * new handler, or the original handler.
+    *
+    * @param layer The layer that is registered to the Express app.
+    * @param handle The handle that is registered to the Express app.
+    * @param currentIdx The current index of the layer stack.
+    * @param stackSize The total size of the layer stack.
+    *
+    * @returns The middleware that will be registered to the Express app.
+    */
+    interceptLayerStack?(
+      layer: RouterLayer,
+      handle: ExpressMiddleware,
+      currentIdx: number,
+      stackSize: number
+    ): ExpressMiddleware;
+
+    /**
+    * Manage the middleware that is responsible for calling the route handler. By
+    * providing this value, you are required to call the route handler yourself
+    * and assign the route metadata to the request object.
+    *
+    * @param handler
+    * @returns An Express middleware function.
+    *
+    * @example
+    * ```typescript
+    * const routeEngine = new RouteEngine(app, "module");
+    *
+    * routeEngine.setOptions({
+    *  customMiddleware: (route, handler) => {
+    *   return (req, res, next) => {
+    *    req.routeMetadata = route.route_options.metadata ?? {};
+    *
+    *    return handler.call(app, req, res, next);
+    *   }
+    *  }
+    * })
+    * ```
+    */
+    customMiddleware?(route: RouterSchema, handler: RouterHandler): ExpressMiddleware;
 }
 ````
 
