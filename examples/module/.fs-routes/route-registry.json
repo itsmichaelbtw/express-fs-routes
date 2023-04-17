@@ -39,7 +39,10 @@
       "metadata": {
         "name": "metadata",
         "description": "This is a metadata route",
-        "tags": ["metadata", "route"]
+        "tags": [
+          "metadata",
+          "route"
+        ]
       }
     },
     "status": "registered",

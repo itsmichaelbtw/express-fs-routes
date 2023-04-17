@@ -4,17 +4,17 @@
   "type": "directory",
   "children": [
     {
-      "name": "index.ts",
+      "name": "index.js",
       "absolute_path": "...",
       "type": "file"
     },
     {
-      "name": "metadata.ts",
+      "name": "metadata.js",
       "absolute_path": "...",
       "type": "file"
     },
     {
-      "name": "ping.ts",
+      "name": "ping.js",
       "absolute_path": "...",
       "type": "file"
     },
@@ -24,12 +24,12 @@
       "type": "directory",
       "children": [
         {
-          "name": "index.ts",
+          "name": "index.js",
           "absolute_path": "...",
           "type": "file"
         },
         {
-          "name": "search.ts",
+          "name": "search.js",
           "absolute_path": "...",
           "type": "file"
         }
@@ -41,17 +41,12 @@
       "type": "directory",
       "children": [
         {
-          "name": "index.ts",
+          "name": "index.js",
           "absolute_path": "...",
           "type": "file"
         },
         {
-          "name": "search.ts",
-          "absolute_path": "...",
-          "type": "file"
-        },
-        {
-          "name": "[id].ts",
+          "name": "[id].js",
           "absolute_path": "...",
           "type": "file"
         }
