@@ -38,8 +38,7 @@
     "release:minor": "npm run release -- --release-as minor",
     "release:major": "npm run release -- --release-as major",
     "release": "npm run build && standard-version -a",
-    "push:tags": "git push --follow-tags origin main",
-    "prepare": "husky install"
+    "push:tags": "git push --follow-tags origin main"
   },
   "repository": {
     "type": "git",
