@@ -49,7 +49,7 @@ import {
 
 type ExpressApp = express.Application;
 type Context = "commonjs" | "module";
-type RouteModifier = (routerSchema: RouteSchema, routeOptions: RouterOptions) => RouteSchema;
+type RouteModifier = (routeSchema: RouteSchema, routeOptions: RouterOptions) => RouteSchema;
 
 function getRouteOptions(handler: RouteHandler): RouterOptions {
   if (handler && isObject(handler.routeOptions)) {
@@ -385,16 +385,16 @@ class Engine {
    * if the route should be registered in the current environment.
    *
    * @param routeHandler The route handler.
-   * @param routerSchema The route schema.
+   * @param routeSchema The route schema.
    */
-  protected useRouteSchema(routeHandler: RouteHandler, routerSchema: RouteSchema): void {
-    const hookRouteSchema = this.options.beforeRegistration(routerSchema);
+  protected useRouteSchema(routeHandler: RouteHandler, routeSchema: RouteSchema): void {
+    const hookRouteSchema = this.options.beforeRegistration(routeSchema);
 
-    this.append(routerSchema);
+    this.append(routeSchema);
 
     if (!isObject(hookRouteSchema)) {
-      routerSchema.error = "The `beforeRegistration` hook returned an invalid value.";
-      routerSchema.status = "error";
+      routeSchema.error = "The `beforeRegistration` hook returned an invalid value.";
+      routeSchema.status = "error";
 
       return;
     }
@@ -426,19 +426,19 @@ class Engine {
    * and determines if the route should be registered in the
    * current environment.
    *
-   * @param RouterSchema The route schema to check.
+   * @param routeSchema The route schema to check.
    * @param callback The callback to invoke.
    */
   protected environmentBasedRegistration(
-    routerSchema: RouteSchema,
+    routeSchema: RouteSchema,
     callback: (proceed: boolean) => void
   ): void {
-    if (isUndefined(routerSchema.route_options)) {
+    if (isUndefined(routeSchema.route_options)) {
       return callback(true);
     }
 
-    if (isArray(routerSchema.route_options.environments)) {
-      const proceed = routerSchema.route_options.environments.some((env) => {
+    if (isArray(routeSchema.route_options.environments)) {
+      const proceed = routeSchema.route_options.environments.some((env) => {
         return env === WILD_CARD_TOKEN || env === getCurrentWorkingEnvironment();
       });
 
@@ -458,7 +458,7 @@ class Engine {
         for (const filePath of directories) {
           const resolved = this.resolveFilePath(filePath);
 
-          if (routerSchema.absolute_path.startsWith(resolved)) {
+          if (routeSchema.absolute_path.startsWith(resolved)) {
             if (proceed === false || proceed === null) {
               proceed = nodeEnv === getCurrentWorkingEnvironment();
             }
@@ -579,10 +579,10 @@ class Engine {
   /**
    * Appends the newly made route schema to the registry.
    *
-   * @param routerSchema The route schema to append.
+   * @param routeSchema The route schema to append.
    */
-  public append(routerSchema: RouteSchema): void {
-    this.$registry.push(routerSchema);
+  public append(routeSchema: RouteSchema): void {
+    this.$registry.push(routeSchema);
   }
 
   /**
