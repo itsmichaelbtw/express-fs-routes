@@ -10,7 +10,7 @@ export const MAX_SAFE_PROMISES = 100;
 export const DEFAULT_OPTIONS: RegistrationOptions = {
   directory: "routes",
   appMount: "",
-  defaultRouteMetadata: {},
+  routeMetadata: {},
   environmentRoutes: undefined,
   indexNames: ["index.js"],
   output: OUTPUT_DIRECTORY,

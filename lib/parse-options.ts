@@ -38,8 +38,8 @@ export function parseRouteRegistrationOptions(options: RegistrationOptions): Reg
     opts.strictMode = DEFAULT_OPTIONS.strictMode;
   }
 
-  if (!isObject(opts.defaultRouteMetadata)) {
-    opts.defaultRouteMetadata = {};
+  if (!isObject(opts.routeMetadata)) {
+    opts.routeMetadata = {};
   }
 
   if (!isFunction(opts.beforeRegistration)) {

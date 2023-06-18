@@ -1,3 +1,4 @@
+import type { NextFunction, Request, Response } from "express";
 import type {
   RouteSchema,
   RouterOptions,
@@ -534,14 +535,15 @@ class Engine {
       return;
     }
 
-    const middleware: ExpressMiddleware = (req, res, next) => {
+    function middleware(this: RouteEngine, req: Request, res: Response, next: NextFunction) {
       const metadata = routeSchema.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-      req.routeMetadata = metadata;
+      const deepMerged = deepmerge(this.options.routeMetadata, metadata);
+      req.routeMetadata = deepMerged;
 
       routeHandler.call(this.$app, req, res, next);
-    };
+    }
 
-    this.$app.use.call(this.$app, routeSchema.base_path, middleware);
+    this.$app.use.call(this.$app, routeSchema.base_path, middleware.bind(this));
   }
 
   /**

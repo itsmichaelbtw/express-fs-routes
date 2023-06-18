@@ -279,7 +279,7 @@ export interface RegistrationOptions<T extends MetaData = any> {
    *
    * @default {}
    */
-  defaultRouteMetadata?: T;
+  routeMetadata?: T;
 
   /**
    * Define any routes that are specific to a certain environment. This
