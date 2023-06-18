@@ -1,4 +1,4 @@
-import type { RouterRegistry, TreeNode } from "../lib/types";
+import type { RouteRegistry, TreeNode, RecursiveTreeNode } from "../lib/types";
 
 import chai from "chai";
 import path from "path";
@@ -15,7 +15,7 @@ const LOCAL_SAVE_DIR = path.join(__dirname, "..", "examples/output");
 
 const routeEngine = newRouteEngine();
 
-function treeNodeRedactCheck(treeNode: TreeNode): boolean {
+function treeNodeRedactCheck(treeNode: RecursiveTreeNode): boolean {
   const redacted = treeNode.absolute_path === REDACT_TOKEN;
 
   if (redacted) {
@@ -29,7 +29,7 @@ function treeNodeRedactCheck(treeNode: TreeNode): boolean {
   return false;
 }
 
-function routeRegistryRedactCheck(registry: RouterRegistry): boolean {
+function routeRegistryRedactCheck(registry: RouteRegistry): boolean {
   return registry.every((route) => {
     return route.absolute_path === REDACT_TOKEN;
   });
@@ -49,7 +49,7 @@ describe("tree-node", () => {
   });
 
   it("should create a recursive tree of the directory", async () => {
-    const treeNode = await createDirectoryTree(EXAMPLES_DIR, async () => {});
+    const treeNode = await createDirectoryTree(EXAMPLES_DIR);
 
     chai.expect(treeNode).to.be.an("object");
     chai.expect(treeNode).to.have.property("name");
@@ -59,7 +59,7 @@ describe("tree-node", () => {
   });
 
   it("should create a local save of the directory", async () => {
-    const treeNode = await createDirectoryTree(EXAMPLES_DIR, async () => {});
+    const treeNode = await createDirectoryTree(EXAMPLES_DIR);
 
     const localSave = new LocalFileSave(LOCAL_SAVE_DIR);
 
@@ -78,7 +78,7 @@ describe("tree-node", () => {
     it("should not save the output when set to false", async () => {
       routeEngine.engine.setOptions(routeEngine.mergeOptions({ output: false }));
 
-      await routeEngine.engine.registerRoutes();
+      await routeEngine.engine.run();
 
       chai.expect(fs.existsSync(path.join(LOCAL_SAVE_DIR, TREE_NODE_FILENAME))).to.be.false;
     });
@@ -86,7 +86,7 @@ describe("tree-node", () => {
     it("should save the output when set to true", async () => {
       routeEngine.engine.setOptions(routeEngine.mergeOptions({ output: LOCAL_SAVE_DIR }));
 
-      const schemas = await routeEngine.engine.registerRoutes();
+      const schemas = await routeEngine.engine.run();
 
       chai.expect(schemas).to.be.an("array");
       chai.expect(schemas.length).to.be.greaterThan(0);
@@ -98,7 +98,7 @@ describe("tree-node", () => {
 
       routeEngine.engine.setOptions(routeEngine.mergeOptions({ output: CUSTOM_OUTPUT }));
 
-      await routeEngine.engine.registerRoutes();
+      await routeEngine.engine.run();
 
       chai.expect(fs.existsSync(CUSTOM_OUTPUT)).to.be.true;
 
@@ -110,7 +110,7 @@ describe("tree-node", () => {
 
       routeEngine.engine.setOptions(routeEngine.mergeOptions({ output: CUSTOM_OUTPUT }));
 
-      await routeEngine.engine.registerRoutes();
+      await routeEngine.engine.run();
 
       chai.expect(fs.existsSync(CUSTOM_OUTPUT)).to.be.true;
 
@@ -124,10 +124,10 @@ describe("tree-node", () => {
         routeEngine.mergeOptions({ output: LOCAL_SAVE_DIR, redactOutputFilePaths: true })
       );
 
-      await routeEngine.engine.registerRoutes();
+      await routeEngine.engine.run();
 
       const treeNode = getJSON<TreeNode>(path.join(LOCAL_SAVE_DIR, TREE_NODE_FILENAME));
-      const registry = getJSON<RouterRegistry>(path.join(LOCAL_SAVE_DIR, REGISTRY_FILENAME));
+      const registry = getJSON<RouteRegistry>(path.join(LOCAL_SAVE_DIR, REGISTRY_FILENAME));
 
       chai.expect(treeNodeRedactCheck(treeNode)).to.be.true;
       chai.expect(routeRegistryRedactCheck(registry)).to.be.true;
@@ -136,10 +136,10 @@ describe("tree-node", () => {
     it("should have the correct properties", async () => {
       routeEngine.engine.setOptions(routeEngine.mergeOptions({ output: LOCAL_SAVE_DIR }));
 
-      await routeEngine.engine.registerRoutes();
+      await routeEngine.engine.run();
 
       const treeNode = getJSON<TreeNode>(path.join(LOCAL_SAVE_DIR, TREE_NODE_FILENAME));
-      const registry = getJSON<RouterRegistry>(path.join(LOCAL_SAVE_DIR, REGISTRY_FILENAME));
+      const registry = getJSON<RouteRegistry>(path.join(LOCAL_SAVE_DIR, REGISTRY_FILENAME));
 
       chai.expect(treeNode).to.be.an("object");
       chai.expect(treeNode).to.have.property("name");
