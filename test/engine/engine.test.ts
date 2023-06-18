@@ -8,20 +8,10 @@ import { RouteEngine } from "../../lib";
 import { DEFAULT_OPTIONS } from "../../lib/constants";
 
 import { newRouteEngine } from "../../scripts/route-engine";
-import { appCache, supertest } from "../../scripts/supertest";
+import { appCache, expectStatus, expectStatusDump, supertest } from "../../scripts/supertest";
 import { destroyAllRoutes } from "../../scripts/route-removal";
 
 const routeEngine = newRouteEngine();
-
-async function expectStatus(route: RouteSchema, status: number): Promise<void> {
-  if (route.layers.length > 1) {
-    for (const layer of route.layers) {
-      await supertest().get(layer.complete_path).expect(status);
-    }
-  } else {
-    await supertest().get(route.base_path).expect(status);
-  }
-}
 
 describe("route-engine", () => {
   afterEach(() => {
@@ -79,11 +69,7 @@ describe("route-engine", () => {
     it("routes that are declared as 'registered' should return a 200", async () => {
       const registry = await routeEngine.engine.run();
 
-      for (const route of registry) {
-        if (route.status === "registered" && !route.route_options.paramsRegex) {
-          expectStatus(route, 200);
-        }
-      }
+      await expectStatusDump(registry, 200);
     });
 
     it("routes that are not declared as 'registered' should return a 404", async () => {
@@ -91,7 +77,9 @@ describe("route-engine", () => {
 
       for (const route of registry) {
         if (route.status !== "registered" && !route.route_options.paramsRegex) {
-          expectStatus(route, 404);
+          for (const layer of route.layers) {
+            await supertest().get(layer.complete_path).expect(404);
+          }
         }
       }
     });
