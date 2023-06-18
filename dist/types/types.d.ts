@@ -1,6 +1,6 @@
 import type { IRouter, Request, Response, NextFunction } from "express";
 export type Methods = "checkout" | "copy" | "delete" | "get" | "head" | "lock" | "merge" | "mkactivity" | "mkcol" | "move" | "m-search" | "notify" | "options" | "patch" | "post" | "purge" | "put" | "report" | "search" | "subscribe" | "trace" | "unlock" | "unsubscribe";
-type MetaData = Record<string, any>;
+export type MetaData = Record<string, any>;
 interface EnvironmentRoutes {
     [key: string]: FilePath[];
 }
@@ -15,6 +15,7 @@ export type ExpressMiddleware = (req: Request, res: Response, next: NextFunction
  * The file path to a given route file.
  */
 export type FilePath = string;
+export type FileExtension = ".js" | ".ts";
 /**
  * The component type of a given node within
  * the directory tree. Only used for internal
@@ -22,20 +23,15 @@ export type FilePath = string;
  */
 export type TreeComponentType = "file" | "directory";
 /**
- * The callback function that is called when
- * a directory is traversed and a file is found.
- */
-export type DirectoryCallback = (fileEntry: TreeNode) => Promise<void>;
-/**
  * The registry of routes that are registered to
  * the express app.
  */
-export type RouterRegistry = RouterSchema[];
+export type RouteRegistry<T extends MetaData = any> = RouteSchema<T>[];
 /**
  * The tree node is a recursive data structure that represents the
  * structure of a given directory. It is used to register routes.
  */
-export interface TreeNode {
+export interface RecursiveTreeNode {
     /**
      * The absolute path to the directory or file.
      */
@@ -49,17 +45,27 @@ export interface TreeNode {
      */
     type: TreeComponentType;
     /**
+     * The extension that was found. This will only be present if the component type
+     * is `file`.
+     */
+    extension: FileExtension;
+    /**
      * The children of the directory. This will only be present if the component type
      * is `directory`.
      */
-    children?: TreeNode[];
+    children?: RecursiveTreeNode[];
 }
+/**
+ * A non recursive tree node that is used to register routes. This
+ * is a clone of the `RecursiveTreeNode` but without the children property.
+ */
+export type TreeNode = Omit<RecursiveTreeNode, "children">;
 /**
  * A generated route schema created after the directory is traversed.
  * This provides a visual representation of the routes that will
  * be registered.
  */
-export interface RouterSchema {
+export interface RouteSchema<T extends MetaData = any> {
     /**
      * The absolute path of the file location.
      */
@@ -71,11 +77,11 @@ export interface RouterSchema {
     /**
      * The attached layers of the route.
      */
-    layers: RouterLayer[];
+    layers: RouteLayer[];
     /**
      * Any options that were exported from the file.
      */
-    route_options: RouterOptions<MetaData>;
+    route_options: RouterOptions<T>;
     /**
      * The status of the route.
      */
@@ -92,13 +98,13 @@ export interface RouterSchema {
 /**
  * A router layer that is attached to a given router.
  */
-export interface RouterLayer {
+export interface RouteLayer {
     /**
      * The resolved method of the route.
      */
     method: Methods;
     /**
-     * The number is registered middleware functions.
+     * The number of registered middleware functions.
      */
     middleware_count: number;
     /**
@@ -113,7 +119,7 @@ export interface RouterLayer {
 /**
  * An object that represents a given route when requiring a route file.
  */
-export interface RouterHandler extends IRouter {
+export interface RouteHandler extends IRouter {
     /**
      * A user defined object that is exported from the route file. This controls
      * the registration behaviour of the route.
@@ -141,7 +147,7 @@ export interface RouterOptions<T extends MetaData = MetaData> {
      *
      * This value takes precedence over `environmentRoutes` when both are present.
      *
-     * Defaults to `null`.
+     * @default null
      */
     environments?: string | string[];
     /**
@@ -150,14 +156,14 @@ export interface RouterOptions<T extends MetaData = MetaData> {
      *
      * This value takes precedence over `indexNames`.
      *
-     * If you have defined a path that is
+     * @default null
      */
     isIndex?: boolean;
     /**
      * Control whether the route should be registered. The route will still be scanned and under go
      * all the same checks, but will bypass express registration.
      *
-     * Defaults to `true`.
+     * @default false
      */
     skip?: boolean;
     /**
@@ -178,6 +184,8 @@ export interface RouterOptions<T extends MetaData = MetaData> {
      *
      * Accepts either a string or a RegExp. If a RegExp is provided,
      * it will be converted to a string using `.source`.
+     *
+     * @default {}
      */
     paramsRegex?: ParamsRegex;
     /**
@@ -188,20 +196,20 @@ export interface RouterOptions<T extends MetaData = MetaData> {
      * specific to a given route where you want to have request
      * based context or conditional logic.
      *
-     * By default, all metadata is defaulted to `{}`.
+     * @default {}
      */
     metadata?: T;
 }
 /**
  * The options that are passed to the `registerRoutes` function.
  */
-export interface RouteRegistrationOptions {
+export interface RegistrationOptions<T extends MetaData = any> {
     /**
      * The root directory that contains all routes you wish to register.
      * You may pass a relative path, or an absolute path. If you pass a relative path,
      * it will be resolved relative to `process.cwd()`.
      *
-     * Defaults to `routes`.
+     * @default "routes"
      */
     directory: FilePath;
     /**
@@ -213,9 +221,16 @@ export interface RouteRegistrationOptions {
      *
      * This is designed to eliminate the need to specify a directory for app mounts.
      *
-     * Defaults to an empty string.
+     * @default ""
      */
     appMount?: string | null;
+    /**
+     * Specify default route metadata that will be passed to all
+     * routes. Existing route metadata will be merged with this value.
+     *
+     * @default {}
+     */
+    routeMetadata?: T;
     /**
      * Define any routes that are specific to a certain environment. This
      * is resolved relative to the `directory` option.
@@ -236,6 +251,8 @@ export interface RouteRegistrationOptions {
      * instead pass an absolute path. E.g. `path.join(__dirname, "routes")`.
      *
      * Note: Only accepts directories.
+     *
+     * @default undefined
      */
     environmentRoutes?: EnvironmentRoutes;
     /**
@@ -256,7 +273,7 @@ export interface RouteRegistrationOptions {
      *
      * Note: Only accepts filenames.
      *
-     * Defaults to `[ "index.js" ]`.
+     * @default ["index.js"]
      */
     indexNames?: string[];
     /**
@@ -266,20 +283,39 @@ export interface RouteRegistrationOptions {
      *
      * Set this to `false` to disable this feature.
      *
-     * Defaults to `.fs-routes`.
+     * @default ".fs-routes"
      */
     output?: string | false | null;
     /**
-     * Choose if you wish to redact the file output paths for security reasons.
+     * Specifies whether the route registration process should run in strict mode.
+     * When strict mode is enabled, additional checks and validations can be performed
+     * to ensure that the routes being registered meet certain criteria or follow specific
+     * guidelines.
+     *
+     * - The directory must exist.
+     * - The required route must return a function.
+     *
+     * When strict mode is enabled, any errors that occur will be thrown and the registration
+     * process will be aborted.
+     *
+     * @default false
      */
-    redactOutputFilePaths?: boolean;
+    strictMode?: boolean;
     /**
      * Whether errors should be thrown. If this is set to `false`, operations will
      * continue as normal.
      *
-     * Defaults to `false`.
+     * @default false
+     *
+     * @deprecated Use `strictMode` instead.
      */
     silent?: boolean;
+    /**
+     * Choose if you wish to redact the file output paths for security reasons.
+     *
+     * @default false
+     */
+    redactOutputFilePaths?: boolean;
     /**
      * A function that is called before a route undergoes registration. This
      * is called before environment based checks are performed, and before the route
@@ -289,14 +325,19 @@ export interface RouteRegistrationOptions {
      * **This is not middleware**. This will only be called once per route and won't
      * be called for each request.
      *
-     * @param route;
+     * @param route The route schema object.
      * @returns The route schema object.
+     *
+     * @default (route) => route
      */
-    beforeRegistration?(route: RouterSchema): RouterSchema;
+    beforeRegistration?(route: RouteSchema<T>): RouteSchema<T>;
     /**
      * Intercept the layer stack that is registered to the Express app and provided
      * your own custom handler for a given path. You can either return a
      * new handler, or the original handler.
+     *
+     * Note: The `layer` that is passed is a clone of the original layer, and will not
+     * affect the original layer stack.
      *
      * @param layer The layer that is registered to the Express app.
      * @param handle The handle that is registered to the Express app.
@@ -304,14 +345,20 @@ export interface RouteRegistrationOptions {
      * @param stackSize The total size of the layer stack.
      *
      * @returns The middleware that will be registered to the Express app.
+     *
+     * @default null
      */
-    interceptLayerStack?(layer: RouterLayer, handle: ExpressMiddleware, currentIdx: number, stackSize: number): ExpressMiddleware;
+    interceptLayerStack?(layer: RouteLayer, handle: ExpressMiddleware, currentIdx: number, stackSize: number): ExpressMiddleware;
     /**
      * Manage the middleware that is responsible for calling the route handler. By
      * providing this value, you are required to call the route handler yourself
      * and assign the route metadata to the request object.
      *
-     * @param handler
+     * Note: The `route` object is a clone of the original route object, and will not
+     * affect the original route object.
+     *
+     * @param route The route schema object.
+     * @param handler The route handler that is registered to the Express app.
      * @returns An Express middleware function.
      *
      * @example
@@ -328,7 +375,9 @@ export interface RouteRegistrationOptions {
      *  }
      * })
      * ```
+     *
+     * @default null
      */
-    customMiddleware?(route: RouterSchema, handler: RouterHandler): ExpressMiddleware;
+    customMiddleware?(route: RouteSchema<T>, handler: RouteHandler): ExpressMiddleware;
 }
 export {};

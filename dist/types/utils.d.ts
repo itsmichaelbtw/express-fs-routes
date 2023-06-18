@@ -4,6 +4,7 @@ export declare function isArray<T>(value: unknown): value is T[];
 export declare function isObject(value: unknown): value is object;
 export declare function isString(value: unknown): value is string;
 export declare function isFunction(value: unknown): value is Function;
+export declare function isBoolean(value: unknown): value is boolean;
 export declare function isEmpty(value: any): boolean;
 export declare function forEach<T>(obj: T, fn: (key: keyof T, value: T[keyof T], obj: T) => void): void;
 export declare function ensureLeadingToken(value: string, token: string): string;

@@ -4,8 +4,10 @@
     * @license MIT
     */
 
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import merge from 'lodash.merge';
 
 function isUndefined(value) {
   return typeof value === "undefined";
@@ -21,6 +23,9 @@ function isString(value) {
 }
 function isFunction(value) {
   return typeof value === "function";
+}
+function isBoolean(value) {
+  return typeof value === "boolean";
 }
 function isEmpty(value) {
   if (isArray(value)) {
@@ -51,6 +56,111 @@ async function asyncReduce(array, callback, initialValue) {
   return accumulator;
 }
 
+const SLUG_REGEX = /\[(.*?)\]/gi;
+const EXPRESS_PARAMS_TOKEN = ":";
+const WILD_CARD_TOKEN = "*";
+process.env.NODE_ENV || "development";
+const OUTPUT_DIRECTORY = ".fs-routes";
+const MAX_SAFE_PROMISES = 100;
+const DEFAULT_OPTIONS = {
+  directory: "routes",
+  appMount: "",
+  routeMetadata: {},
+  environmentRoutes: undefined,
+  indexNames: ["index.js"],
+  output: OUTPUT_DIRECTORY,
+  strictMode: false,
+  redactOutputFilePaths: false,
+  beforeRegistration: route => route,
+  customMiddleware: null,
+  interceptLayerStack: null
+};
+const DEFAULT_ROUTE_OPTIONS = {
+  environments: null,
+  isIndex: null,
+  skip: false,
+  paramsRegex: {},
+  metadata: {}
+};
+const TREE_NODE_FILENAME = "tree-node.json";
+const REGISTRY_FILENAME = "route-registry.json";
+const REDACT_TOKEN = "...";
+
+function parseRouteRegistrationOptions(options) {
+  if (!isObject(options)) {
+    return DEFAULT_OPTIONS;
+  }
+  const opts = Object.assign({}, DEFAULT_OPTIONS, options);
+  if (!isString(opts.directory)) {
+    opts.directory = DEFAULT_OPTIONS.directory;
+  }
+  if (!isString(opts.appMount) && opts.appMount !== null) {
+    opts.appMount = DEFAULT_OPTIONS.appMount;
+  }
+  if (!isArray(opts.indexNames)) {
+    opts.indexNames = DEFAULT_OPTIONS.indexNames;
+  }
+  if (!isString(opts.output) && opts.output !== false && opts.output !== null) {
+    opts.output = DEFAULT_OPTIONS.output;
+  }
+  if (!isObject(opts.environmentRoutes) && opts.environmentRoutes !== undefined) {
+    opts.environmentRoutes = {};
+  }
+  if (!isBoolean(opts.redactOutputFilePaths)) {
+    opts.redactOutputFilePaths = DEFAULT_OPTIONS.redactOutputFilePaths;
+  }
+  if (!isBoolean(opts.strictMode)) {
+    opts.strictMode = DEFAULT_OPTIONS.strictMode;
+  }
+  if (!isObject(opts.routeMetadata)) {
+    opts.routeMetadata = {};
+  }
+  if (!isFunction(opts.beforeRegistration)) {
+    opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
+  }
+  if (!isFunction(opts.customMiddleware)) {
+    opts.customMiddleware = null;
+  }
+  if (!isFunction(opts.interceptLayerStack)) {
+    opts.interceptLayerStack = null;
+  }
+  return opts;
+}
+function parseRouteHandlerOptions(options) {
+  if (!isObject(options)) {
+    return DEFAULT_ROUTE_OPTIONS;
+  }
+  const opts = Object.assign({}, DEFAULT_ROUTE_OPTIONS, options);
+  if (opts.environments !== undefined) {
+    if (isString(opts.environments)) {
+      opts.environments = [opts.environments];
+    } else if (!isArray(opts.environments) || isEmpty(opts.environments)) {
+      opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
+    }
+  } else {
+    opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
+  }
+  if (!isEmpty(options.paramsRegex) && isObject(options.paramsRegex)) {
+    for (const pathName in options.paramsRegex) {
+      const pathRegex = options.paramsRegex[pathName];
+      if (isString(pathRegex)) {
+        continue;
+      }
+      if (pathRegex instanceof RegExp) {
+        options.paramsRegex[pathName] = pathRegex.source;
+      } else {
+        delete options.paramsRegex[pathName];
+      }
+    }
+  } else {
+    opts.paramsRegex = {};
+  }
+  if (!isObject(options.metadata)) {
+    opts.metadata = {};
+  }
+  return opts;
+}
+
 const FILE_FILTER = /^([^\.].*)(?<!\.d)\.(js|ts)$/;
 function readDirectorySync(dirPath) {
   return fs.readdirSync(dirPath);
@@ -70,7 +180,8 @@ function newComponentEntry(relativePath, component) {
   const entry = {
     name: path.basename(relativePath),
     absolute_path: relativePath,
-    type: component
+    type: component,
+    extension: path.extname(relativePath)
   };
   if (component === "directory") {
     entry.children = [];
@@ -85,18 +196,18 @@ function newComponentEntry(relativePath, component) {
  * @param onFile A callback function that is called for each file.
  * @returns A promise that resolves to a directory tree.
  */
-async function createDirectoryTree(dir, onFile) {
+async function createDirectoryTree(dir) {
   const directory = readDirectorySync(dir);
   if (directory.length === 0) {
     return newComponentEntry(dir, "directory");
   }
   const resolvedPath = dir;
   const componentEntry = newComponentEntry(resolvedPath, "directory");
-  const TreeNode = await asyncReduce(directory, async (tree, file) => {
+  const treeNode = await asyncReduce(directory, async (tree, file) => {
     const filePath = path.join(resolvedPath, file);
     const fileStats = await stats(filePath);
     if (fileStats.isDirectory()) {
-      const child = await createDirectoryTree(filePath, onFile);
+      const child = await createDirectoryTree(filePath);
       if (child) {
         tree.children.push(child);
       }
@@ -104,56 +215,32 @@ async function createDirectoryTree(dir, onFile) {
       const isFile = FILE_FILTER.test(file);
       if (isFile) {
         const fileEntry = newComponentEntry(filePath, "file");
-        await onFile(fileEntry);
         tree.children.push(fileEntry);
       }
     }
     return tree;
   }, componentEntry);
-  return TreeNode;
+  return treeNode;
 }
 
-const colors = {
-  red: "\x1b[31m",
-  yellow: "\x1b[33m",
-  green: "\x1b[32m",
-  lightblue: "\x1b[36m"
-};
-const globals = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m"
-};
-function debug(message, color) {
-  const prefix = "[EXPRESS-FS-ROUTES] ";
-  const colorizedMessage = `${colors[color]}${prefix}${message}${globals.reset}`;
-  console.log(colorizedMessage);
+/**
+ * Flattens the given tree node and filters out
+ * all nodes that are not files.
+ *
+ * @param treeNode The tree node to flatten.
+ * @returns The flattened tree node.
+ */
+function flattenTreeNode(treeNode) {
+  const flattenTree = [];
+  function flatten(node) {
+    flattenTree.push(node);
+    if (node.children) {
+      node.children.forEach(flatten);
+    }
+  }
+  flatten(treeNode);
+  return flattenTree.filter(node => node.type === "file");
 }
-
-const SLUG_REGEX = /\[(.*?)\]/gi;
-const EXPRESS_PARAMS_TOKEN = ":";
-const WILD_CARD_TOKEN = "*";
-process.env.NODE_ENV || "development";
-const OUTPUT_DIRECTORY = ".fs-routes";
-const DEFAULT_OPTIONS = {
-  directory: "routes",
-  appMount: "",
-  indexNames: ["index.js"],
-  output: OUTPUT_DIRECTORY,
-  silent: false,
-  environmentRoutes: undefined,
-  redactOutputFilePaths: false,
-  beforeRegistration: route => route
-};
-const DEFAULT_ROUTE_OPTIONS = {
-  environments: null,
-  isIndex: null,
-  skip: false,
-  paramsRegex: {},
-  metadata: {}
-};
-const TREE_NODE_FILENAME = "tree-node.json";
-const REGISTRY_FILENAME = "route-registry.json";
-const REDACT_TOKEN = "...";
 
 class LocalFileSave {
   constructor(directory) {
@@ -170,9 +257,7 @@ class LocalFileSave {
         encoding: "utf8",
         flag: "w"
       });
-    } catch (error) {
-      debug(error, "red");
-    }
+    } catch (error) {}
   }
 }
 function initRedactFn(redact, jsonType) {
@@ -209,100 +294,19 @@ function initRedactFn(redact, jsonType) {
   };
 }
 
-function parseRouteRegistrationOptions(options) {
-  if (!isObject(options)) {
-    return DEFAULT_OPTIONS;
-  }
-  const opts = Object.assign({}, DEFAULT_OPTIONS, options);
-  if (!isString(opts.directory)) {
-    opts.directory = DEFAULT_OPTIONS.directory;
-  }
-  if (!isString(opts.appMount) && opts.appMount !== null) {
-    opts.appMount = DEFAULT_OPTIONS.appMount;
-  }
-  if (!isObject(opts.environmentRoutes)) {
-    opts.environmentRoutes = {};
-  }
-  if (!isArray(opts.indexNames)) {
-    opts.indexNames = DEFAULT_OPTIONS.indexNames;
-  }
-  if (!isString(opts.output) && opts.output !== false && opts.output !== null) {
-    opts.output = DEFAULT_OPTIONS.output;
-  }
-  if (!isFunction(opts.beforeRegistration)) {
-    opts.beforeRegistration = DEFAULT_OPTIONS.beforeRegistration;
-  }
-  if (!isFunction(opts.customMiddleware)) {
-    opts.customMiddleware = null;
-  }
-  return opts;
-}
-function parseRouterHandlerOptions(options) {
-  if (!isObject(options)) {
-    return DEFAULT_ROUTE_OPTIONS;
-  }
-  const opts = Object.assign({}, DEFAULT_ROUTE_OPTIONS, options);
-  if (opts.environments !== undefined) {
-    if (isString(opts.environments)) {
-      opts.environments = [opts.environments];
-    } else if (!isArray(opts.environments) || isEmpty(opts.environments)) {
-      opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
-    }
-  }
-  if (!isEmpty(options.paramsRegex) && isObject(options.paramsRegex)) {
-    for (const pathName in options.paramsRegex) {
-      const pathRegex = options.paramsRegex[pathName];
-      if (isString(pathRegex)) {
-        continue;
-      }
-      if (pathRegex instanceof RegExp) {
-        options.paramsRegex[pathName] = pathRegex.source;
-      } else {
-        delete options.paramsRegex[pathName];
-      }
-    }
-  } else {
-    opts.paramsRegex = {};
-  }
-  if (!isObject(options.metadata)) {
-    opts.metadata = {};
-  }
-  return opts;
-}
-
 function getRouteOptions(handler) {
-  // each individual handler exports a property called `routeOptions`
-  // which controls the route's behavior when it is registered.
-
-  // create a default route options and merge it with the handler's
-  // route options.
-
-  if (handler && handler.routeOptions && isObject(handler.routeOptions)) {
-    return parseRouterHandlerOptions(handler.routeOptions);
+  if (handler && isObject(handler.routeOptions)) {
+    return parseRouteHandlerOptions(handler.routeOptions);
   }
   return DEFAULT_ROUTE_OPTIONS;
 }
-function debugOrThrowError(error, color) {
-  if (debugOrThrowError.silent) {
-    if (error instanceof Error) {
-      error = error.message;
-    }
-    return debug(error, color);
-  } else {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error(error);
-  }
-}
-debugOrThrowError.silent = DEFAULT_OPTIONS.silent;
 class Engine {
   constructor(app, context) {
     if (!app) {
-      throw new TypeError("No app was passed to the route engine.");
+      throw new TypeError("No 'app' was provided to the RouteEngine constructor");
     }
     if (context !== "commonjs" && context !== "module") {
-      throw new TypeError("The engine expected a valid context. Must be either 'commonjs' or 'module'.");
+      throw new TypeError("The 'context' provided to the RouteEngine constructor is invalid");
     }
     this.$app = app;
     this.$context = context;
@@ -311,7 +315,8 @@ class Engine {
   }
 
   /**
-   * The default output directory for the route registration.
+   * The default output directory for the route
+   * registry and tree node files.
    */
   static OUTPUT_DIRECTORY = OUTPUT_DIRECTORY;
 
@@ -330,10 +335,11 @@ class Engine {
   }
 
   /**
-   * Returns the absolute directory that is being used.
+   * Returns the absolute directory that is being used
+   * to register routes.
    */
   get absoluteDirectory() {
-    return this.$activeDirectory;
+    return this.$currentDirectory;
   }
 
   /**
@@ -343,63 +349,55 @@ class Engine {
    */
   setOptions(options) {
     this.$options = parseRouteRegistrationOptions(options);
-    if (path.isAbsolute(this.$options.directory)) {
-      this.$activeDirectory = this.$options.directory;
+    if (path.isAbsolute(this.options.directory)) {
+      this.$currentDirectory = this.options.directory;
     } else {
-      this.$activeDirectory = path.resolve(process.cwd(), this.$options.directory);
+      this.$currentDirectory = path.resolve(process.cwd(), this.options.directory);
     }
-    debugOrThrowError.silent = this.$options.silent;
+    if (this.options.strictMode) {
+      const exists = fs.existsSync(this.$currentDirectory);
+      if (!exists) {
+        throw new Error(`The directory '${this.$currentDirectory}' does not exist.`);
+      }
+    }
   }
 
   /**
-   * Resolves the given file path to an absolute path
-   * relative to the directory that is being used.
+   * Registers the given tree node as a route. This
+   * method is called recursively for each file in
+   * the directory tree. Alternatively, you can call
+   * this method with a file path to register a single
+   * route.
    *
-   * @param filePath The file path to resolve.
-   * @returns The resolved file path.
+   * @param node The tree node to register.
+   * @returns The route schema.
    */
-  resolveFilePath(filePath) {
-    if (path.isAbsolute(filePath)) {
-      return filePath;
-    }
-    return path.resolve(this.$activeDirectory, filePath);
-  }
-
-  /**
-   * An asynchronous function that is called for every file that the
-   * directory scan finds. This is responsible for requiring the file
-   * and transforming it into a route handler.
-   *
-   * @param fileEntry The file entry.
-   * @returns A promise that resolves to void.
-   */
-  async onFile(fileEntry) {
+  async registerRoute(node) {
     try {
-      const routerHandler = await this.requireHandler(fileEntry.absolute_path);
-
-      // If the route handler is null, it means that the file is empty
-      // or something went wrong when requiring the file. In this case,
-      // we skip the registration process but still append the route
-      // to the registry.
-      if (routerHandler === null) {
-        const schema = this.newRouterSchema(null, fileEntry, schema => {
+      const routeHandler = await this.requireHandler(node.absolute_path, node.extension);
+      const schema = this.createRouteSchema(routeHandler, node, schema => {
+        if (routeHandler === null) {
           schema.status = "skipped";
           schema.error = "Most likely forgot to export a default function.";
-          return schema;
-        });
+        }
+        return schema;
+      });
+      if (routeHandler) {
+        this.useRouteSchema(routeHandler, schema);
+      } else {
         this.append(schema);
-        return debugOrThrowError(`Route handler at ${fileEntry.absolute_path} is empty.`, "red");
       }
-      const routerSchema = this.newRouterSchema(routerHandler, fileEntry);
-      this.useRouterSchema(routerHandler, routerSchema);
+      return schema;
     } catch (error) {
-      const schema = this.newRouterSchema(null, fileEntry, schema => {
+      if (this.options.strictMode) {
+        throw new Error(`Failed to register route for file '${node.absolute_path}': ${error.message}`);
+      }
+      const schema = this.createRouteSchema(null, node, schema => {
         schema.status = "error";
         schema.error = error.message;
         return schema;
       });
       this.append(schema);
-      debugOrThrowError(error, "red");
     }
   }
 
@@ -412,32 +410,23 @@ class Engine {
    * @param path The path to the route handler.
    * @returns The route handler or null if the file is empty.
    */
-  async requireHandler(path) {
-    function handleNonFunction() {
-      debugOrThrowError(`The default export of a route must be a function. Found at: ${path}`, "red");
-    }
-    let handler = null;
-    try {
-      if (this.$context === "module") {
-        handler = await import(ensureLeadingToken(path, "file://"));
-        if (typeof handler.default !== "function") {
-          handleNonFunction();
-          return null;
-        }
-        const routeOptions = handler.routeOptions;
-        handler = handler.default;
-        handler.routeOptions = routeOptions;
-      } else if (this.$context === "commonjs") {
-        handler = require(path);
+  async requireHandler(path, extension) {
+    const filePath = this.transformFilePath(path, extension);
+    let handler = await import(filePath);
+    if (typeof handler.default !== "function") {
+      if (this.options.strictMode) {
+        throw new Error(`The default export of a route must be a function. Found at: ${path}`);
       }
-    } catch (error) {
-      debugOrThrowError(error, "red");
+      return null;
     }
-
-    // only for typescript compatibility
+    const routeOptions = handler.routeOptions;
+    handler = handler.default;
+    handler.routeOptions = routeOptions;
     if (handler && handler.__esModule) {
       if (typeof handler.default !== "function") {
-        handleNonFunction();
+        if (this.options.strictMode) {
+          throw new Error(`The default export of a route must be a function. Found at: ${path}`);
+        }
         return null;
       }
       handler.default.routeOptions = handler.routeOptions;
@@ -449,23 +438,33 @@ class Engine {
     handler.routeOptions = getRouteOptions(handler);
     return handler;
   }
-  newRouterSchema(routerHandler, fileEntry, modifier) {
+
+  /**
+   * Creates a new route schema for the given handler and
+   * file entry.
+   *
+   * @param routeHandler The router handler.
+   * @param schema The file entry.
+   * @param modifier The route modifier.
+   * @returns The route schema.
+   */
+  createRouteSchema(routeHandler, schema, modifier) {
     const baseSchema = {
-      absolute_path: fileEntry.absolute_path,
+      absolute_path: schema.absolute_path,
       base_path: null,
       layers: [],
       route_options: {},
       status: null
     };
-    if (routerHandler === null || isEmpty(routerHandler.stack)) {
+    if (routeHandler === null || isEmpty(routeHandler.stack)) {
       if (isFunction(modifier)) {
         return modifier(baseSchema, {});
       }
       return baseSchema;
     }
-    const basePath = this.createRouteUrl(routerHandler, fileEntry);
+    const basePath = this.createRouteUrl(routeHandler, schema);
     const layers = [];
-    for (const layer of routerHandler.stack) {
+    for (const layer of routeHandler.stack) {
       const route = layer.route;
       const path = route.path;
       const stack = route.stack;
@@ -476,23 +475,23 @@ class Engine {
         }
         return "unknown";
       }
-      function fullPath() {
+      function createPathExtension() {
         if (path === "/") {
           return basePath;
         }
         return basePath + path;
       }
       const method = layerMethod();
-      const completePath = fullPath();
+      const completePath = createPathExtension();
       const routerLayer = {
         method: method,
         middleware_count: stack.length,
         extended_path: path,
         complete_path: completePath
       };
-      if (this.$options.interceptLayerStack) {
+      if (this.options.interceptLayerStack) {
         for (const [index, middleware] of stack.entries()) {
-          const newHandler = this.$options.interceptLayerStack(routerLayer, middleware.handle, index, routerLayer.middleware_count);
+          const newHandler = this.options.interceptLayerStack(Object.assign({}, routerLayer), middleware.handle, index, routerLayer.middleware_count);
           if (isFunction(newHandler)) {
             stack[index].handle = newHandler;
           }
@@ -502,9 +501,12 @@ class Engine {
     }
     baseSchema.layers = layers;
     baseSchema.base_path = basePath;
-    baseSchema.route_options = routerHandler.routeOptions;
+    if (this.options.routeMetadata) {
+      merge(routeHandler.routeOptions.metadata, this.options.routeMetadata);
+    }
+    baseSchema.route_options = routeHandler.routeOptions;
     if (isFunction(modifier)) {
-      return modifier(baseSchema, routerHandler.routeOptions);
+      return modifier(baseSchema, routeHandler.routeOptions);
     }
     return baseSchema;
   }
@@ -514,22 +516,22 @@ class Engine {
    * it to the route registry. All associated layers within
    * the routes stack are also processed and appended to the registry.
    *
-   * @param routerHandler The route handler that was required.
-   * @param fileEntry The file entry from the directory scan.
+   * @param routeHandler The route handler that was required.
+   * @param schema The file entry from the directory scan.
    * @param modifier A function that modifies the route schema.
    * @returns An array of route schemas.
    */
-  createRouteUrl(routerHandler, fileEntry) {
-    let routePath = removeFileExtension(fileEntry.absolute_path);
-    if (routePath.startsWith(this.$activeDirectory)) {
-      routePath = routePath.replace(this.$activeDirectory, "");
+  createRouteUrl(routeHandler, schema) {
+    let routePath = removeFileExtension(schema.absolute_path);
+    if (routePath.startsWith(this.$currentDirectory)) {
+      routePath = routePath.replace(this.$currentDirectory, "");
     }
     routePath = routePath.replace(/\\/g, "/");
     if (!!this.options.appMount) {
       const appMount = ensureLeadingToken(this.options.appMount, "/");
       routePath = ensureLeadingToken(routePath, appMount);
     }
-    if (routerHandler.routeOptions.isIndex === null) {
+    if (routeHandler.routeOptions.isIndex === null) {
       for (const indexName of this.options.indexNames) {
         const resolved = removeFileExtension(indexName);
         const basename = path.basename(routePath);
@@ -538,7 +540,7 @@ class Engine {
           break;
         }
       }
-    } else if (routerHandler.routeOptions.isIndex) {
+    } else if (routeHandler.routeOptions.isIndex) {
       const basename = path.basename(routePath);
       const base = ensureLeadingToken(basename, "/").replace(/\/$/, "");
       if (base !== this.options.appMount) {
@@ -548,7 +550,7 @@ class Engine {
     if (routePath.endsWith("/")) {
       routePath = routePath.replace(/\/$/, "");
     }
-    routePath = this.replaceParamsRegExp(routePath, routerHandler.routeOptions.paramsRegex);
+    routePath = this.paramsReplacement(routePath, routeHandler.routeOptions.paramsRegex);
     return ensureLeadingToken(routePath, "/");
   }
 
@@ -560,16 +562,15 @@ class Engine {
    * Environmented based registration is also performed to determine
    * if the route should be registered in the current environment.
    *
-   * @param routerHandler The route handler.
-   * @param routerSchema The route schema.
+   * @param routeHandler The route handler.
+   * @param routeSchema The route schema.
    */
-  useRouterSchema(routerHandler, routerSchema) {
-    const hookRouteSchema = this.$options.beforeRegistration(routerSchema);
-    this.append(routerSchema);
+  useRouteSchema(routeHandler, routeSchema) {
+    const hookRouteSchema = this.options.beforeRegistration(routeSchema);
+    this.append(routeSchema);
     if (!isObject(hookRouteSchema)) {
-      routerSchema.error = "The `beforeRegistration` hook returned an invalid value.";
-      routerSchema.status = "error";
-      debugOrThrowError(routerSchema.error, "red");
+      routeSchema.error = "The `beforeRegistration` hook returned an invalid value.";
+      routeSchema.status = "error";
       return;
     }
     if (hookRouteSchema.route_options.skip) {
@@ -580,7 +581,7 @@ class Engine {
     this.environmentBasedRegistration(hookRouteSchema, proceed => {
       const environment = getCurrentWorkingEnvironment();
       if (proceed) {
-        this.assignMiddleware(routerHandler, hookRouteSchema);
+        this.assignMiddleware(routeHandler, hookRouteSchema);
         hookRouteSchema.status = "registered";
         hookRouteSchema.message = `Route was registered successfully for ${environment}`;
       } else {
@@ -595,15 +596,12 @@ class Engine {
    * and determines if the route should be registered in the
    * current environment.
    *
-   * @param RouterSchema The route schema to check.
+   * @param routeSchema The route schema to check.
    * @param callback The callback to invoke.
    */
-  environmentBasedRegistration(routerSchema, callback) {
-    if (isUndefined(routerSchema.route_options)) {
-      return callback(true);
-    }
-    if (isArray(routerSchema.route_options.environments)) {
-      const proceed = routerSchema.route_options.environments.some(env => {
+  environmentBasedRegistration(routeSchema, callback) {
+    if (isArray(routeSchema.route_options.environments)) {
+      const proceed = routeSchema.route_options.environments.some(env => {
         return env === WILD_CARD_TOKEN || env === getCurrentWorkingEnvironment();
       });
       return callback(proceed);
@@ -617,10 +615,13 @@ class Engine {
       if (isArray(directories)) {
         for (const filePath of directories) {
           const resolved = this.resolveFilePath(filePath);
-          if (routerSchema.absolute_path.startsWith(resolved)) {
-            if (proceed === false || proceed === null) {
+          if (routeSchema.absolute_path.startsWith(resolved)) {
+            if (!proceed) {
               proceed = nodeEnv === getCurrentWorkingEnvironment();
             }
+          }
+          if (proceed) {
+            break;
           }
         }
       }
@@ -633,28 +634,6 @@ class Engine {
   }
 
   /**
-   * Uses the given route handler middleware. Undergoes
-   * a registration hook to allow for any modifications to the
-   * route schema and handler.
-   *
-   * @param route The route schema.
-   * @param handler The route handler.
-   */
-  assignMiddleware(routerHandler, routeSchema) {
-    // fix double call when using / as base path
-
-    if (this.$options.customMiddleware) {
-      this.$app.use.call(this.$app, routeSchema.base_path, this.$options.customMiddleware(routeSchema, routerHandler));
-      return;
-    }
-    const middleware = (req, res, next) => {
-      req.routeMetadata = routeSchema.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-      routerHandler.call(this.$app, req, res, next);
-    };
-    this.$app.use.call(this.$app, routeSchema.base_path, middleware);
-  }
-
-  /**
    * Attempts to replace any slug parameters with
    * the provided regex pattern. Otherwise, the
    * default Express parameter token is used.
@@ -663,7 +642,7 @@ class Engine {
    * @param paramsRegex The regex pattern to use.
    * @returns The modified URL.
    */
-  replaceParamsRegExp(url, paramsRegex) {
+  paramsReplacement(url, paramsRegex) {
     if (isUndefined(paramsRegex)) {
       return url;
     }
@@ -681,70 +660,147 @@ class Engine {
   }
 
   /**
+   * Uses the given route handler middleware. Undergoes
+   * a registration hook to allow for any modifications to the
+   * route schema and handler.
+   *
+   * @param route The route schema.
+   * @param handler The route handler.
+   */
+  assignMiddleware(routeHandler, routeSchema) {
+    if (this.options.customMiddleware) {
+      this.$app.use.call(this.$app, routeSchema.base_path, this.options.customMiddleware(Object.assign({}, routeSchema), routeHandler));
+      return;
+    }
+    function middleware(req, res, next) {
+      req.routeMetadata = routeSchema.route_options.metadata;
+      routeHandler.call(this.$app, req, res, next);
+    }
+    this.$app.use.call(this.$app, routeSchema.base_path, middleware.bind(this));
+  }
+
+  /**
+   * Resolves the given file path to an absolute path
+   * relative to the directory that is being used.
+   *
+   * @param filePath The file path to resolve.
+   * @returns The resolved file path.
+   */
+  resolveFilePath(filePath) {
+    if (path.isAbsolute(filePath)) {
+      return filePath;
+    }
+    return path.resolve(this.$currentDirectory, filePath);
+  }
+
+  /**
+   * Transforms the file path depending on the context
+   * and current operating system.
+   *
+   * @param filePath The file path to transform.
+   */
+  transformFilePath(filePath, extension) {
+    const platform = os.platform();
+    if (platform === "win32") {
+      filePath = filePath.replace(/\\/g, "/");
+      if (this.$context === "module" || extension === ".js") {
+        return `file://${filePath}`;
+      }
+      return filePath;
+    }
+    if (!filePath.startsWith("/")) {
+      filePath = `/${filePath}`;
+    }
+    return filePath;
+  }
+
+  /**
    * Appends the newly made route schema to the registry.
    *
-   * @param routerSchema The route schema to append.
+   * @param routeSchema The route schema to append.
    */
-  append(routerSchema) {
-    this.$registry.push(routerSchema);
+  append(routeSchema) {
+    this.$registry.push(routeSchema);
+  }
+
+  /**
+   * Clears the route registry.
+   */
+  clear() {
+    this.$registry = [];
   }
 }
-
-/**
- * Initializes a new instance of the RouteEngine class
- * that is used to register all available routes within
- * a given directory.
- *
- * @param app The express application instance.
- * @param context The context in which the routes are being registered.
- *
- * @example
- * ```typescript
- * import express from "express";
- *
- * import { RouteEngine } from "express-fs-routes";
- *
- * const app = express();
- * const fsRoutes = new RouteEngine(app, "module");
- *
- * fsRoutes.setOptions({ ... })
- *
- * await fsRoutes.registerRoutes();
- * ```
- */
 class RouteEngine extends Engine {
   constructor(app, context) {
     super(app, context);
   }
 
   /**
-   * Registers all available routes within a given directory.
+   * Saves the output of the route registry and tree node
+   * files to the given output directory. If the `redactOutputFilePaths`
+   * option is set to true, the file paths will be redacted.
+   *
+   * @param tree The tree node.
+   * @returns The route registry.
    */
-  async registerRoutes() {
-    try {
-      this.$registry = [];
-      const directory = this.$activeDirectory;
-      const tree = await createDirectoryTree(directory, this.onFile.bind(this));
-      const output = this.options.output;
-      const registry = this.registry;
-      if (isString(output) && output.length) {
-        const localOutput = new LocalFileSave(output);
-        localOutput.save({
-          json: tree,
-          fileName: TREE_NODE_FILENAME
-        }, initRedactFn(this.options.redactOutputFilePaths, "tree-node"));
-        localOutput.save({
-          json: registry,
-          fileName: REGISTRY_FILENAME
-        }, initRedactFn(this.options.redactOutputFilePaths, "router-registry"));
-      }
-      return registry;
-    } catch (error) {
-      debugOrThrowError(error, "red");
+  async save(tree) {
+    const output = this.options.output;
+    const redact = this.options.redactOutputFilePaths;
+    const registry = this.registry;
+    if (!isString(output) || !registry.length) {
+      return;
     }
+    const localFileSave = new LocalFileSave(output);
+    localFileSave.save({
+      json: tree,
+      fileName: TREE_NODE_FILENAME
+    }, initRedactFn(redact, "tree-node"));
+    localFileSave.save({
+      json: registry,
+      fileName: REGISTRY_FILENAME
+    }, initRedactFn(redact, "router-registry"));
   }
 
-  // public async registerSingleRoute(): Promise<void> {}
+  /**
+   * Runs the route engine, reading the directory tree
+   * and registering the routes. If you have indicated
+   * the output directory, the route registry and tree
+   * node files will be saved.
+   *
+   * @returns The route registry.
+   */
+  async run() {
+    try {
+      this.clear();
+      const treeNode = await createDirectoryTree(this.absoluteDirectory);
+      const flattenTree = flattenTreeNode(treeNode);
+      async function createSafePromises() {
+        function createPromise(nodes) {
+          const promises = nodes.map(node => {
+            return this.registerRoute.call(this, node);
+          });
+          return promises;
+        }
+        if (flattenTree.length < MAX_SAFE_PROMISES) {
+          const promises = createPromise.call(this, flattenTree);
+          await Promise.all(promises);
+          return;
+        }
+        for (let i = 0; i < flattenTree.length; i += MAX_SAFE_PROMISES) {
+          const chunk = flattenTree.slice(i, i + MAX_SAFE_PROMISES);
+          const promises = createPromise.call(this, chunk);
+          await Promise.all(promises);
+        }
+      }
+      await createSafePromises.call(this);
+      await this.save(treeNode);
+      return this.registry;
+    } catch (error) {
+      if (this.options.strictMode) {
+        throw error;
+      }
+    }
+  }
 }
 
 export { RouteEngine };

@@ -1,10 +1,11 @@
-import type { RouterOptions, RouteRegistrationOptions } from "./types";
+import type { RouterOptions, RegistrationOptions } from "./types";
 export declare const SLUG_REGEX: RegExp;
 export declare const EXPRESS_PARAMS_TOKEN = ":";
 export declare const WILD_CARD_TOKEN = "*";
 export declare const CURRENT_ENVIRONMENT: string;
 export declare const OUTPUT_DIRECTORY = ".fs-routes";
-export declare const DEFAULT_OPTIONS: RouteRegistrationOptions;
+export declare const MAX_SAFE_PROMISES = 100;
+export declare const DEFAULT_OPTIONS: RegistrationOptions;
 export declare const DEFAULT_ROUTE_OPTIONS: RouterOptions;
 export declare const TREE_NODE_FILENAME = "tree-node.json";
 export declare const REGISTRY_FILENAME = "route-registry.json";

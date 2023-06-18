@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.3.0...v3.0.0) (2023-06-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* renamed `registerRoutes` to `run`
+
+### Fixed
+
+* break early when proceed flag has been set ([ae165bd](https://github.com/itsmichaelbtw/express-fs-routes/commit/ae165bd1b94973899d8eb16b841e213aae21a08b))
+* husky prepare script throwing errors in ci pipeline ([6d19d34](https://github.com/itsmichaelbtw/express-fs-routes/commit/6d19d342ac52d34a9567badb7b6ed227a8493132))
+* improved exported types and documentation ([4eb2085](https://github.com/itsmichaelbtw/express-fs-routes/commit/4eb20854444bc0e0bbe8bef5a5ea0c53809073da))
+* incorrect tsconfig being used when running ts examples ([5be5d91](https://github.com/itsmichaelbtw/express-fs-routes/commit/5be5d91a24bd41b1cda24ed6ce09504a25fd8eff))
+* ts examples not running when using type: module ([fdf494d](https://github.com/itsmichaelbtw/express-fs-routes/commit/fdf494d745d34508c54b48be58ee317c40d946db))
+* updated example projects to use new api ([4d51ac2](https://github.com/itsmichaelbtw/express-fs-routes/commit/4d51ac24f7e90133f1717b1c1765f2dffa77d117))
+
+
+### What's New
+
+* added default value to `index.d.ts` jsdoc ([1386751](https://github.com/itsmichaelbtw/express-fs-routes/commit/1386751a72cf3efc72389714f9149d0f8a9baa65))
+* changed examples scripts for shorthand typescript ([945567c](https://github.com/itsmichaelbtw/express-fs-routes/commit/945567c6836f62ddd45eca2347695f5dd32a6be6))
+* default environments option when undefined ([e13e6b6](https://github.com/itsmichaelbtw/express-fs-routes/commit/e13e6b6502cb554561b95276bdf6a899cdc403c8))
+* improved directory tree scanning ([67c64e3](https://github.com/itsmichaelbtw/express-fs-routes/commit/67c64e3d5c8c577acf8e4c60e1394b04bcd8eaf7))
+* improved registration process with `promise.all` ([6cbca39](https://github.com/itsmichaelbtw/express-fs-routes/commit/6cbca39e2fd45e78bef0aa15d112099a9da480f6))
+* new `routeMetadata` option ([3e59798](https://github.com/itsmichaelbtw/express-fs-routes/commit/3e59798bb91bf7b1be83bb451a1c975720e60749))
+* new `strictMode` option ([9b5da21](https://github.com/itsmichaelbtw/express-fs-routes/commit/9b5da210384c2c26c51b47a4f5b06f81e69e6cb1))
+* renamed `registerRoutes` to `run` ([2fa6379](https://github.com/itsmichaelbtw/express-fs-routes/commit/2fa637960298b71c93b3c5d5d7af0262277dbb67))
+* singlular route schemas can now be registered ([3a066ca](https://github.com/itsmichaelbtw/express-fs-routes/commit/3a066ca933cb39cb1d766a00627c57423463c875))
+* split typescript examples into cjs and esm environments ([e0124ad](https://github.com/itsmichaelbtw/express-fs-routes/commit/e0124ad9bc6537b10a1d57d433bf437cb8bc3f56))
+
 ## [2.3.0](https://github.com/itsmichaelbtw/express-fs-routes/compare/v2.2.1...v2.3.0) (2023-04-17)
 
 
