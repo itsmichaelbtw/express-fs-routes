@@ -433,10 +433,6 @@ class Engine {
     routeSchema: RouteSchema,
     callback: (proceed: boolean) => void
   ): void {
-    if (isUndefined(routeSchema.route_options)) {
-      return callback(true);
-    }
-
     if (isArray(routeSchema.route_options.environments)) {
       const proceed = routeSchema.route_options.environments.some((env) => {
         return env === WILD_CARD_TOKEN || env === getCurrentWorkingEnvironment();
