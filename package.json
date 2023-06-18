@@ -32,7 +32,7 @@
     "examples:commonjs": "node examples/commonjs/app.js",
     "examples:module": "node examples/module/app.js",
     "examples:ts:cjs": "ts-node examples/typescript-cjs/app.ts --project examples/typescript/tsconfig.json",
-    "examples:ts:esm": "ts-node examples/typescript-esm/app.ts --project examples/typescript/tsconfig.json",
+    "examples:ts:esm": "npm run ts -- examples/typescript-esm/app.ts --project examples/typescript/tsconfig.json",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "release:patch": "npm run release -- --release-as patch",
