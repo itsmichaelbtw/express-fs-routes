@@ -143,7 +143,7 @@ class Engine {
    * @param node The tree node to register.
    * @returns The route schema.
    */
-  protected async registerRoute(node: TreeNode): Promise<RouteSchema> {
+  public async registerRoute(node: TreeNode): Promise<RouteSchema> {
     try {
       const routeHandler = await this.requireHandler(node.absolute_path, node.extension);
 
