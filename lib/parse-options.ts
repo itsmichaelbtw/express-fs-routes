@@ -1,11 +1,9 @@
-import type { RouteRegistrationOptions, RouterOptions } from "./types";
+import type { RegistrationOptions, RouterOptions } from "./types";
 
-import { isObject, isArray, isFunction, isString, isEmpty } from "./utils";
+import { isObject, isArray, isFunction, isString, isBoolean, isEmpty } from "./utils";
 import { DEFAULT_OPTIONS, DEFAULT_ROUTE_OPTIONS } from "./constants";
 
-export function parseRouteRegistrationOptions(
-  options: RouteRegistrationOptions
-): RouteRegistrationOptions {
+export function parseRouteRegistrationOptions(options: RegistrationOptions): RegistrationOptions {
   if (!isObject(options)) {
     return DEFAULT_OPTIONS;
   }
@@ -20,16 +18,28 @@ export function parseRouteRegistrationOptions(
     opts.appMount = DEFAULT_OPTIONS.appMount;
   }
 
-  if (!isObject(opts.environmentRoutes)) {
-    opts.environmentRoutes = {};
-  }
-
   if (!isArray(opts.indexNames)) {
     opts.indexNames = DEFAULT_OPTIONS.indexNames;
   }
 
   if (!isString(opts.output) && opts.output !== false && opts.output !== null) {
     opts.output = DEFAULT_OPTIONS.output;
+  }
+
+  if (!isObject(opts.environmentRoutes) && opts.environmentRoutes !== undefined) {
+    opts.environmentRoutes = {};
+  }
+
+  if (!isBoolean(opts.redactOutputFilePaths)) {
+    opts.redactOutputFilePaths = DEFAULT_OPTIONS.redactOutputFilePaths;
+  }
+
+  if (!isBoolean(opts.strictMode)) {
+    opts.strictMode = DEFAULT_OPTIONS.strictMode;
+  }
+
+  if (!isObject(opts.defaultRouteMetadata)) {
+    opts.defaultRouteMetadata = {};
   }
 
   if (!isFunction(opts.beforeRegistration)) {
@@ -40,10 +50,14 @@ export function parseRouteRegistrationOptions(
     opts.customMiddleware = null;
   }
 
+  if (!isFunction(opts.interceptLayerStack)) {
+    opts.interceptLayerStack = null;
+  }
+
   return opts;
 }
 
-export function parseRouterHandlerOptions(options: RouterOptions): RouterOptions {
+export function parseRouteHandlerOptions(options: RouterOptions): RouterOptions {
   if (!isObject(options)) {
     return DEFAULT_ROUTE_OPTIONS;
   }
