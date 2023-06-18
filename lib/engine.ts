@@ -123,6 +123,14 @@ class Engine {
     } else {
       this.$currentDirectory = path.resolve(process.cwd(), this.options.directory);
     }
+
+    if (this.options.strictMode) {
+      const exists = fs.existsSync(this.$currentDirectory);
+
+      if (!exists) {
+        throw new Error(`The directory '${this.$currentDirectory}' does not exist.`);
+      }
+    }
   }
 
   /**
@@ -156,6 +164,12 @@ class Engine {
 
       return schema;
     } catch (error) {
+      if (this.options.strictMode) {
+        throw new Error(
+          `Failed to register route for file '${node.absolute_path}': ${error.message}`
+        );
+      }
+
       const schema = this.createRouteSchema(null, node, (schema) => {
         schema.status = "error";
         schema.error = error.message;
@@ -183,6 +197,10 @@ class Engine {
       handler = await import(filePath);
 
       if (typeof handler.default !== "function") {
+        if (this.options.strictMode) {
+          throw new Error(`The default export of a route must be a function. Found at: ${path}`);
+        }
+
         return null;
       }
 
@@ -191,12 +209,20 @@ class Engine {
       handler = handler.default;
       handler.routeOptions = routeOptions;
     } catch (error) {
+      if (this.options.strictMode) {
+        throw error;
+      }
+
       return null;
     }
 
     // only for typescript compatibility
     if (handler && handler.__esModule) {
       if (typeof handler.default !== "function") {
+        if (this.options.strictMode) {
+          throw new Error(`The default export of a route must be a function. Found at: ${path}`);
+        }
+
         return null;
       }
 
@@ -653,6 +679,10 @@ export class RouteEngine extends Engine {
       await this.save(treeNode);
 
       return this.registry;
-    } catch (error) {}
+    } catch (error) {
+      if (this.options.strictMode) {
+        throw error;
+      }
+    }
   }
 }
