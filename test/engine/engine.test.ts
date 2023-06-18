@@ -121,5 +121,32 @@ describe("route-engine", () => {
         chai.expect(error).to.be.an("error");
       }
     });
+
+    it("should convert the slug to a regex", async () => {
+      const registry = await routeEngine.engine.run();
+
+      const customSchema = registry.find((route) => route.absolute_path.includes("[custom]"));
+      const nestedSchema = registry.find((route) => route.absolute_path.includes("[nested]"));
+
+      if (customSchema) {
+        chai.expect(customSchema.base_path.endsWith("/:custom")).to.equal(true);
+      }
+
+      if (nestedSchema) {
+        chai.expect(nestedSchema.base_path.endsWith("/:nested/:token")).to.equal(true);
+      }
+    });
+
+    it("should remove the directory from the base path", async () => {
+      const registry = await routeEngine.engine.run();
+
+      for (const route of registry) {
+        if (route.base_path) {
+          chai
+            .expect(route.base_path.startsWith(routeEngine.engine.absoluteDirectory))
+            .to.equal(false);
+        }
+      }
+    });
   });
 });
