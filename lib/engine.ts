@@ -455,9 +455,13 @@ class Engine {
           const resolved = this.resolveFilePath(filePath);
 
           if (routeSchema.absolute_path.startsWith(resolved)) {
-            if (proceed === false || proceed === null) {
+            if (!proceed) {
               proceed = nodeEnv === getCurrentWorkingEnvironment();
             }
+          }
+
+          if (proceed) {
+            break;
           }
         }
       }
