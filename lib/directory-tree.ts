@@ -1,7 +1,13 @@
 import fs from "fs";
 import path from "path";
 
-import type { FilePath, TreeComponentType, DirectoryCallback, TreeNode } from "./types";
+import type {
+  FilePath,
+  TreeComponentType,
+  RecursiveTreeNode,
+  TreeNode,
+  FileExtension
+} from "./types";
 
 import { asyncReduce } from "./utils";
 
@@ -23,11 +29,15 @@ async function stats(filePath: FilePath): Promise<fs.Stats> {
   });
 }
 
-function newComponentEntry(relativePath: FilePath, component: TreeComponentType): TreeNode {
-  const entry: TreeNode = {
+function newComponentEntry(
+  relativePath: FilePath,
+  component: TreeComponentType
+): RecursiveTreeNode {
+  const entry: RecursiveTreeNode = {
     name: path.basename(relativePath),
     absolute_path: relativePath,
-    type: component
+    type: component,
+    extension: path.extname(relativePath) as FileExtension
   };
 
   if (component === "directory") {
@@ -44,10 +54,7 @@ function newComponentEntry(relativePath: FilePath, component: TreeComponentType)
  * @param onFile A callback function that is called for each file.
  * @returns A promise that resolves to a directory tree.
  */
-export async function createDirectoryTree(
-  dir: FilePath,
-  onFile: DirectoryCallback
-): Promise<TreeNode> {
+export async function createDirectoryTree(dir: FilePath): Promise<RecursiveTreeNode> {
   const directory = readDirectorySync(dir);
 
   if (directory.length === 0) {
@@ -57,14 +64,14 @@ export async function createDirectoryTree(
   const resolvedPath = dir;
   const componentEntry = newComponentEntry(resolvedPath, "directory");
 
-  const TreeNode = await asyncReduce(
+  const treeNode = await asyncReduce(
     directory,
     async (tree, file) => {
       const filePath = path.join(resolvedPath, file);
       const fileStats = await stats(filePath);
 
       if (fileStats.isDirectory()) {
-        const child = await createDirectoryTree(filePath, onFile);
+        const child = await createDirectoryTree(filePath);
 
         if (child) {
           tree.children.push(child);
@@ -74,8 +81,6 @@ export async function createDirectoryTree(
 
         if (isFile) {
           const fileEntry = newComponentEntry(filePath, "file");
-
-          await onFile(fileEntry);
           tree.children.push(fileEntry);
         }
       }
@@ -85,5 +90,28 @@ export async function createDirectoryTree(
     componentEntry
   );
 
-  return TreeNode;
+  return treeNode;
+}
+
+/**
+ * Flattens the given tree node and filters out
+ * all nodes that are not files.
+ *
+ * @param treeNode The tree node to flatten.
+ * @returns The flattened tree node.
+ */
+export function flattenTreeNode(treeNode: RecursiveTreeNode): TreeNode[] {
+  const flattenTree: TreeNode[] = [];
+
+  function flatten(node: RecursiveTreeNode) {
+    flattenTree.push(node);
+
+    if (node.children) {
+      node.children.forEach(flatten);
+    }
+  }
+
+  flatten(treeNode);
+
+  return flattenTree.filter((node) => node.type === "file");
 }
