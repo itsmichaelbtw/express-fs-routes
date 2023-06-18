@@ -1,15 +1,14 @@
-import type { RouterRegistry, TreeNode } from "./types";
+import type { RecursiveTreeNode, RouteRegistry, TreeNode } from "./types";
 
 import fs from "fs";
 import path from "path";
 
-import { debug } from "./debug";
 import { isArray } from "./utils";
 
 import { REDACT_TOKEN } from "./constants";
 
 type JSONType = "router-registry" | "tree-node";
-type File = RouterRegistry | TreeNode;
+type File = RouteRegistry | TreeNode;
 
 interface Data<T = File> {
   json: T;
@@ -35,16 +34,14 @@ export class LocalFileSave {
         encoding: "utf8",
         flag: "w"
       });
-    } catch (error) {
-      debug(error, "red");
-    }
+    } catch (error) {}
   }
 }
 
 export function initRedactFn(
   redact: boolean,
   jsonType: "router-registry"
-): RedactionFn<RouterRegistry>;
+): RedactionFn<RouteRegistry>;
 export function initRedactFn(redact: boolean, jsonType: "tree-node"): RedactionFn<TreeNode>;
 export function initRedactFn<T = File>(redact: boolean, jsonType: JSONType): RedactionFn<T> {
   return (json) => {
@@ -54,7 +51,7 @@ export function initRedactFn<T = File>(redact: boolean, jsonType: JSONType): Red
 
     switch (jsonType) {
       case "router-registry": {
-        const typeCast: RouterRegistry = json as RouterRegistry;
+        const typeCast = json as RouteRegistry;
 
         return typeCast.map((entry) => {
           return {
@@ -65,7 +62,7 @@ export function initRedactFn<T = File>(redact: boolean, jsonType: JSONType): Red
       }
 
       case "tree-node": {
-        const typeCast: TreeNode = json as TreeNode;
+        const typeCast = json as RecursiveTreeNode;
 
         const updatedNode = {
           ...typeCast,
