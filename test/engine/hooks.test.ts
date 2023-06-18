@@ -42,6 +42,9 @@ describe("hooks", () => {
       const options = routeEngine.mergeOptions({
         beforeRegistration(route) {
           route.base_path = "/my-new-path";
+          route.route_options.metadata = {
+            test: true
+          };
           return route;
         }
       });
@@ -50,7 +53,61 @@ describe("hooks", () => {
 
       const routes = await routeEngine.engine.run();
 
-      chai.expect(routes[0].base_path).to.equal("/my-new-path");
+      for (const route of routes) {
+        if (route.status === "registered") {
+          chai.expect(route.base_path).to.equal("/my-new-path");
+          chai.expect(route.route_options.metadata).to.deep.equal({
+            test: true
+          });
+        }
+      }
+    });
+
+    it("should set the status to `error` when a non-object is returned", async () => {
+      let absolute = "";
+
+      const options = routeEngine.mergeOptions({
+        beforeRegistration(route) {
+          absolute = route.absolute_path;
+          return null;
+        }
+      });
+
+      routeEngine.engine.setOptions(options);
+
+      const routes = await routeEngine.engine.run();
+
+      const schema = routes.find((route) => route.absolute_path === absolute);
+
+      if (schema) {
+        chai.expect(schema.status).to.equal("error");
+      } else {
+        chai.expect.fail("Should have found the route");
+      }
+    });
+
+    it("should set the status to `skip` when manually defining in the route_options", async () => {
+      let absolute = "";
+
+      const options = routeEngine.mergeOptions({
+        beforeRegistration(route) {
+          absolute = route.absolute_path;
+          route.route_options.skip = true;
+          return route;
+        }
+      });
+
+      routeEngine.engine.setOptions(options);
+
+      const routes = await routeEngine.engine.run();
+
+      const schema = routes.find((route) => route.absolute_path === absolute);
+
+      if (schema) {
+        chai.expect(schema.status).to.equal("skipped");
+      } else {
+        chai.expect.fail("Should have found the route");
+      }
     });
   });
 
