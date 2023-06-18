@@ -109,26 +109,32 @@ export interface RouteSchema<T extends MetaData = any> {
    * The absolute path of the file location.
    */
   absolute_path: FilePath;
+
   /**
    * The relative path of the route.
    */
   base_path: string;
+
   /**
    * The attached layers of the route.
    */
   layers: RouteLayer[];
+
   /**
    * Any options that were exported from the file.
    */
   route_options: RouterOptions<T>;
+
   /**
    * The status of the route.
    */
   status: "registered" | "skipped" | "error";
+
   /**
    * Error message if the route was skipped.
    */
   error?: string;
+
   /**
    * A message that describes the status of the route.
    */
@@ -143,14 +149,17 @@ export interface RouteLayer {
    * The resolved method of the route.
    */
   method: Methods;
+
   /**
    * The number of registered middleware functions.
    */
   middleware_count: number;
+
   /**
    * The path of the route.
    */
   complete_path: string;
+
   /**
    * The extended path of the route.
    */
@@ -380,7 +389,7 @@ export interface RegistrationOptions<T extends MetaData = any> {
    * **This is not middleware**. This will only be called once per route and won't
    * be called for each request.
    *
-   * @param route;
+   * @param route The route schema object.
    * @returns The route schema object.
    *
    * @default (route) => route
@@ -419,7 +428,8 @@ export interface RegistrationOptions<T extends MetaData = any> {
    * Note: The `route` object is a clone of the original route object, and will not
    * affect the original route object.
    *
-   * @param handler
+   * @param route The route schema object.
+   * @param handler The route handler that is registered to the Express app.
    * @returns An Express middleware function.
    *
    * @example
