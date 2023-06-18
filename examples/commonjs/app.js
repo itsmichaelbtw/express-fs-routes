@@ -15,7 +15,7 @@ fsRoutes.setOptions({
 });
 
 async function startApp() {
-  await fsRoutes.registerRoutes();
+  await fsRoutes.run();
 
   app.listen(port, () => {
     console.log(`CommonJS Example app listening at http://localhost:${port}`);

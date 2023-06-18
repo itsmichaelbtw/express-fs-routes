@@ -19,7 +19,7 @@ fsRoutes.setOptions({
   redactOutputFilePaths: true
 });
 
-await fsRoutes.registerRoutes();
+await fsRoutes.run();
 
 app.listen(port, () => {
   console.log(`Module example app listening at http://localhost:${port}`);
