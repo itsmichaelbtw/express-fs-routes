@@ -31,7 +31,8 @@
     "ts": "node --experimental-specifier-resolution=node --loader ts-node/esm",
     "examples:commonjs": "node examples/commonjs/app.js",
     "examples:module": "node examples/module/app.js",
-    "examples:typescript": "ts-node examples/typescript/app.ts --project examples/typescript/tsconfig.json",
+    "examples:typescript:cjs": "ts-node examples/typescript-cjs/app.ts --project examples/typescript/tsconfig.json",
+    "examples:typescript:esm": "ts-node examples/typescript-esm/app.ts --project examples/typescript/tsconfig.json",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "release:patch": "npm run release -- --release-as patch",
@@ -69,6 +70,7 @@
     "@types/fs-extra": "^11.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.15.11",
+    "@types/sinon": "^10.0.15",
     "@types/supertest": "^2.0.12",
     "chai": "^4.3.7",
     "env-agent": "^2.5.1",
@@ -105,5 +107,9 @@
   "contributors": [
     "Michael Cizek <itsmichaelbtw@gmail.com>"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "deepmerge": "^4.3.1",
+    "sinon": "^15.1.2"
+  }
 }
