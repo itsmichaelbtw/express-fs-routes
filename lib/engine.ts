@@ -19,7 +19,7 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import deepmerge from "deepmerge";
+import merge from "lodash.merge";
 
 import { parseRouteRegistrationOptions, parseRouteHandlerOptions } from "./parse-options";
 import { createDirectoryTree, flattenTreeNode } from "./directory-tree";
@@ -315,6 +315,11 @@ class Engine {
 
     baseSchema.layers = layers;
     baseSchema.base_path = basePath;
+
+    if (this.options.routeMetadata) {
+      merge(routeHandler.routeOptions.metadata, this.options.routeMetadata);
+    }
+
     baseSchema.route_options = routeHandler.routeOptions;
 
     if (isFunction(modifier)) {
@@ -525,9 +530,7 @@ class Engine {
     }
 
     function middleware(this: RouteEngine, req: Request, res: Response, next: NextFunction) {
-      const metadata = routeSchema.route_options.metadata ?? DEFAULT_ROUTE_OPTIONS.metadata;
-      const deepMerged = deepmerge(this.options.routeMetadata, metadata);
-      req.routeMetadata = deepMerged;
+      req.routeMetadata = routeSchema.route_options.metadata;
 
       routeHandler.call(this.$app, req, res, next);
     }
