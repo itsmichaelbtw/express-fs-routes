@@ -9,12 +9,16 @@ export const OUTPUT_DIRECTORY = ".fs-routes";
 export const DEFAULT_OPTIONS: RouteRegistrationOptions = {
   directory: "routes",
   appMount: "",
+  defaultRouteMetadata: {},
+  environmentRoutes: undefined,
   indexNames: ["index.js"],
   output: OUTPUT_DIRECTORY,
   silent: false,
-  environmentRoutes: undefined,
+  strictMode: false,
   redactOutputFilePaths: false,
-  beforeRegistration: (route) => route
+  beforeRegistration: (route) => route,
+  customMiddleware: null,
+  interceptLayerStack: null
 };
 
 export const DEFAULT_ROUTE_OPTIONS: RouterOptions = {
