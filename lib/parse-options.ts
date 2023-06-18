@@ -70,6 +70,8 @@ export function parseRouteHandlerOptions(options: RouterOptions): RouterOptions 
     } else if (!isArray(opts.environments) || isEmpty(opts.environments)) {
       opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
     }
+  } else {
+    opts.environments = DEFAULT_ROUTE_OPTIONS.environments;
   }
 
   if (!isEmpty(options.paramsRegex) && isObject(options.paramsRegex)) {
