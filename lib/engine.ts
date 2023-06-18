@@ -191,33 +191,22 @@ class Engine {
    * @returns The route handler or null if the file is empty.
    */
   protected async requireHandler(path: FilePath, extension: FileExtension): Promise<RouteHandler> {
-    let handler = null;
+    const filePath = this.transformFilePath(path, extension);
+    let handler = await import(filePath);
 
-    try {
-      const filePath = this.transformFilePath(path, extension);
-      handler = await import(filePath);
-
-      if (typeof handler.default !== "function") {
-        if (this.options.strictMode) {
-          throw new Error(`The default export of a route must be a function. Found at: ${path}`);
-        }
-
-        return null;
-      }
-
-      const routeOptions = handler.routeOptions;
-
-      handler = handler.default;
-      handler.routeOptions = routeOptions;
-    } catch (error) {
+    if (typeof handler.default !== "function") {
       if (this.options.strictMode) {
-        throw error;
+        throw new Error(`The default export of a route must be a function. Found at: ${path}`);
       }
 
       return null;
     }
 
-    // only for typescript compatibility
+    const routeOptions = handler.routeOptions;
+
+    handler = handler.default;
+    handler.routeOptions = routeOptions;
+
     if (handler && handler.__esModule) {
       if (typeof handler.default !== "function") {
         if (this.options.strictMode) {
@@ -609,6 +598,14 @@ export class RouteEngine extends Engine {
     super(app, context);
   }
 
+  /**
+   * Saves the output of the route registry and tree node
+   * files to the given output directory. If the `redactOutputFilePaths`
+   * option is set to true, the file paths will be redacted.
+   *
+   * @param tree The tree node.
+   * @returns The route registry.
+   */
   private async save(tree: TreeNode): Promise<void> {
     const output = this.options.output;
     const redact = this.options.redactOutputFilePaths;
