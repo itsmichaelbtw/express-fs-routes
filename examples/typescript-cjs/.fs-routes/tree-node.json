@@ -2,36 +2,43 @@
   "name": "routes",
   "absolute_path": "...",
   "type": "directory",
+  "extension": "",
   "children": [
     {
       "name": "index.ts",
       "absolute_path": "...",
-      "type": "file"
+      "type": "file",
+      "extension": ".ts"
     },
     {
       "name": "metadata.ts",
       "absolute_path": "...",
-      "type": "file"
+      "type": "file",
+      "extension": ".ts"
     },
     {
       "name": "ping.ts",
       "absolute_path": "...",
-      "type": "file"
+      "type": "file",
+      "extension": ".ts"
     },
     {
       "name": "posts",
       "absolute_path": "...",
       "type": "directory",
+      "extension": "",
       "children": [
         {
           "name": "index.ts",
           "absolute_path": "...",
-          "type": "file"
+          "type": "file",
+          "extension": ".ts"
         },
         {
           "name": "search.ts",
           "absolute_path": "...",
-          "type": "file"
+          "type": "file",
+          "extension": ".ts"
         }
       ]
     },
@@ -39,21 +46,25 @@
       "name": "users",
       "absolute_path": "...",
       "type": "directory",
+      "extension": "",
       "children": [
         {
           "name": "index.ts",
           "absolute_path": "...",
-          "type": "file"
+          "type": "file",
+          "extension": ".ts"
         },
         {
           "name": "search.ts",
           "absolute_path": "...",
-          "type": "file"
+          "type": "file",
+          "extension": ".ts"
         },
         {
           "name": "[id].ts",
           "absolute_path": "...",
-          "type": "file"
+          "type": "file",
+          "extension": ".ts"
         }
       ]
     }

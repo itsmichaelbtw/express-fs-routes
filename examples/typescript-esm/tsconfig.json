@@ -5,7 +5,7 @@
   },
   "ts-node": {
     "compilerOptions": {
-      "module": "ESNext"
+      "module": "ES6"
     }
   },
   "include": ["routes", "controllers"],
