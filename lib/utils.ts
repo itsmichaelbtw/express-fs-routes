@@ -22,6 +22,10 @@ export function isFunction(value: unknown): value is Function {
   return typeof value === "function";
 }
 
+export function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
 export function isEmpty(value: any): boolean {
   if (isArray(value)) {
     return value.length === 0;
